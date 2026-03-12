@@ -13,9 +13,9 @@ services:
         value: 10000
       - key: BASE_URL
         generateValue: false
-        value: https://spinwin.onrender.com   # ← Render will show you your real URL after deploy; update this
+        value: https://spinwin-607f.onrender.com
       - key: DASHBOARD_URL
-        value: https://spinwin.onrender.com
+        value: https://spinwin-607f.onrender.com
       - key: ALLOWED_ORIGIN
         value: "*"
       - key: DB_PATH
