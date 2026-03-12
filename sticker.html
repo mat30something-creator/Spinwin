@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spin & Win — Print Stickers</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background: #f5f5f5; font-family: 'DM Sans', sans-serif; }
+
+.controls {
+  background: #111;
+  color: #fff;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ctrl-logo { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; color:#F5C518; margin-right:8px; }
+.ctrl-label { font-size:12px; color:#888; }
+.ctrl-input {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius:5px; padding:7px 12px;
+  color:#fff; font-size:12px; outline:none; width:200px;
+}
+.print-btn {
+  background:#D0021B; color:#fff; border:none; border-radius:5px;
+  padding:9px 20px; font-size:13px; font-weight:600;
+  cursor:pointer; margin-left:auto;
+}
+.print-btn:hover { background:#B50018; }
+
+/* Sticker grid */
+.sticker-sheet {
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Individual sticker — 3.5" × 4" at 96dpi = 336×384px */
+.sticker {
+  width: 336px;
+  height: 384px;
+  background: #0A0A0A;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0,0,0,.25);
+  page-break-inside: avoid;
+}
+
+/* Red accent top bar */
+.sticker-top {
+  background: #D0021B;
+  height: 8px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Diagonal stripe bg */
+.sticker-bg {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -50deg,
+    transparent,
+    transparent 18px,
+    rgba(245,197,24,.03) 18px,
+    rgba(245,197,24,.03) 19px
+  );
+  pointer-events: none;
+}
+
+.sticker-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.sticker-eyebrow {
+  background: rgba(245,197,24,.12);
+  border: 1px solid rgba(245,197,24,.25);
+  border-radius: 3px;
+  padding: 3px 10px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #F5C518;
+  margin-bottom: 6px;
+  align-self: stretch;
+  text-align: center;
+}
+
+.sticker-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  line-height: .95;
+  letter-spacing: .5px;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.sticker-headline span { color: #F5C518; }
+
+/* QR code placeholder — replaced with real QR via JS */
+.qr-area {
+  background: #fff;
+  border-radius: 8px;
+  width: 130px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.qr-area img { width: 100%; height: 100%; }
+.qr-area .qr-placeholder {
+  font-size: 10px;
+  color: #999;
+  text-align: center;
+  padding: 8px;
+  line-height: 1.4;
+}
+
+.sticker-cta {
+  font-size: 10px;
+  color: #888;
+  text-align: center;
+  margin-top: 6px;
+}
+.sticker-cta strong { color: #ccc; display: block; font-size: 11px; margin-bottom: 1px; }
+
+/* Prize row */
+.prizes-row {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  width: 100%;
+  margin-top: 8px;
+}
+.prize-chip {
+  flex: 1;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 4px;
+  text-align: center;
+  padding: 5px 3px;
+}
+.prize-chip .pamt {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  color: #F5C518;
+  line-height: 1;
+}
+.prize-chip .plbl {
+  font-size: 7px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.sticker-footer {
+  background: rgba(245,197,24,.07);
+  border-top: 1px solid rgba(245,197,24,.12);
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.dealer-name-label {
+  font-size: 10px;
+  color: #888;
+  letter-spacing: .5px;
+}
+.qr-id-label {
+  font-size: 9px;
+  color: #444;
+  font-family: monospace;
+}
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff !important; }
+  .controls { display: none !important; }
+  .sticker-sheet { padding: 0; gap: 8mm; }
+  .sticker {
+    width: 88mm;   /* ~3.5 inches */
+    height: 102mm; /* ~4 inches */
+    box-shadow: none;
+    border: 0.5px solid #ddd;
+  }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="ctrl-logo">⚡ SPIN &amp; WIN</div>
+  <div>
+    <div class="ctrl-label">Dealer Name</div>
+    <input class="ctrl-input" type="text" id="ctrlDealer" placeholder="Premier Auto Group" oninput="updateStickers()"/>
+  </div>
+  <div>
+    <div class="ctrl-label">How many stickers?</div>
+    <select class="ctrl-input" id="ctrlCount" style="width:100px" onchange="updateStickers()">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="4" selected>4</option>
+      <option value="6">6</option>
+      <option value="8">8</option>
+    </select>
+  </div>
+  <button class="print-btn" onclick="window.print()">🖨 Print Stickers</button>
+</div>
+
+<div class="sticker-sheet" id="stickerSheet"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const params     = new URLSearchParams(location.search);
+const QR_ID      = params.get('qr')     || 'QR-LOT-001';
+const DEALER_ID  = params.get('dealer') || 'DEALER-DEMO';
+const LABEL      = params.get('label')  || '';
+const BASE_URL   = location.origin;
+
+// Pre-fill dealer name from param or fetch from server
+document.getElementById('ctrlDealer').value =
+  params.get('name') || 'Premier Auto Group';
+
+function updateStickers() {
+  const count      = parseInt(document.getElementById('ctrlCount').value);
+  const dealerName = document.getElementById('ctrlDealer').value || 'Your Dealership';
+  const sheet      = document.getElementById('stickerSheet');
+  sheet.innerHTML  = '';
+
+  for (let i = 0; i < count; i++) {
+    const div  = document.createElement('div');
+    div.className = 'sticker';
+    div.id = `sticker-${i}`;
+    div.innerHTML = `
+      <div class="sticker-top"></div>
+      <div class="sticker-bg"></div>
+      <div class="sticker-body">
+        <div class="sticker-eyebrow">🔒 Exclusive Offer — Scan to Unlock</div>
+        <div class="sticker-headline">WIN UP TO<br/><span>$1,000 OFF</span><br/>THIS VEHICLE</div>
+        <div class="qr-area" id="qr-canvas-${i}">
+          <div class="qr-placeholder">Loading QR…</div>
+        </div>
+        <div class="sticker-cta">
+          <strong>Scan with your phone camera</strong>
+          Enter your info for an instant prize spin
+        </div>
+        <div class="prizes-row">
+          <div class="prize-chip"><div class="pamt">$100</div><div class="plbl">Off</div></div>
+          <div class="prize-chip"><div class="pamt">$200</div><div class="plbl">Off</div></div>
+          <div class="prize-chip"><div class="pamt">$500</div><div class="plbl">Off</div></div>
+          <div class="prize-chip"><div class="pamt">$1K</div><div class="plbl">Off</div></div>
+        </div>
+      </div>
+      <div class="sticker-footer">
+        <div class="dealer-name-label">${escHtml(dealerName)}</div>
+        <div class="qr-id-label">${escHtml(QR_ID)}</div>
+      </div>
+    `;
+    sheet.appendChild(div);
+
+    // Generate QR code into the container
+    const qrContainer = document.getElementById(`qr-canvas-${i}`);
+    qrContainer.innerHTML = '';
+    try {
+      new QRCode(qrContainer, {
+        text: `${BASE_URL}/?qr=${QR_ID}&dealer=${DEALER_ID}`,
+        width: 130,
+        height: 130,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    } catch(e) {
+      qrContainer.innerHTML = '<div class="qr-placeholder">QR requires server</div>';
+    }
+  }
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init
+updateStickers();
+</script>
+</body>
+</html>

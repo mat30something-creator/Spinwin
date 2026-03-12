@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: spinwin
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: BASE_URL
+        generateValue: false
+        value: https://spinwin.onrender.com   # ← Render will show you your real URL after deploy; update this
+      - key: DASHBOARD_URL
+        value: https://spinwin.onrender.com
+      - key: ALLOWED_ORIGIN
+        value: "*"
+      - key: DB_PATH
+        value: ./spinwin.db
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false   # ← You'll paste this in Render's dashboard (your Gmail)
+      - key: SMTP_PASS
+        sync: false   # ← You'll paste your Gmail App Password here
+      - key: ADMIN_EMAIL
+        sync: false   # ← Your email to get notified of new dealer signups

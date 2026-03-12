@@ -1,0 +1,7 @@
+node_modules/
+backend/node_modules/
+backend/.env
+backend/spinwin.db
+*.db
+.DS_Store
+.env

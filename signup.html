@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spin & Win — Get Started</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0F0E0C; --paper:#FAF8F4; --gold:#C8960C; --gold-lt:#F5C518;
+  --red:#C8180C; --card:#FFFFFF; --border:#E8E4DC; --muted:#9A9488;
+  --text:#1A1917;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--paper);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 48px;border-bottom:1px solid var(--border);background:var(--paper);position:sticky;top:0;z-index:50;}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--ink);}
+.nav-logo em{color:var(--gold);}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .15s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{background:var(--ink);color:#fff;border:none;border-radius:6px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+.nav-cta:hover{background:#2a2a28;}
+
+/* ── HERO ── */
+.hero{max-width:1100px;margin:0 auto;padding:80px 48px 64px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(200,150,12,.1);border:1px solid rgba(200,150,12,.25);border-radius:4px;padding:5px 12px;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(36px,4vw,56px);line-height:1.1;margin-bottom:18px;color:var(--ink);}
+.hero h1 em{font-style:italic;color:var(--gold);}
+.hero-sub{font-size:16px;color:var(--muted);line-height:1.7;max-width:440px;margin-bottom:32px;}
+.hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.btn-primary{background:var(--ink);color:#fff;border:none;border-radius:7px;padding:14px 28px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-block;}
+.btn-primary:hover{background:#2a2a28;transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:7px;padding:13px 24px;font-size:13px;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-block;}
+.btn-ghost:hover{border-color:#ccc;background:rgba(0,0,0,.03);}
+
+/* Hero visual */
+.hero-visual{position:relative;}
+.phone-mockup{width:100%;max-width:320px;margin:0 auto;display:block;}
+.phone-frame{background:var(--ink);border-radius:36px;padding:14px;box-shadow:0 32px 80px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.1);position:relative;}
+.phone-screen{background:#0A0A0A;border-radius:24px;overflow:hidden;aspect-ratio:9/16;display:flex;flex-direction:column;}
+.ps-header{background:#111;padding:16px;border-bottom:1px solid rgba(245,197,24,.15);display:flex;justify-content:space-between;align-items:center;}
+.ps-logo{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:#F5C518;}
+.ps-dealer{font-size:9px;color:#555;text-align:right;}
+.ps-body{flex:1;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.ps-title{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:#fff;text-align:center;}
+.ps-title span{color:#F5C518;}
+.ps-prizes{display:flex;gap:4px;}
+.ps-prize{flex:1;background:#1a1a1a;border:1px solid rgba(245,197,24,.15);border-radius:5px;padding:6px 4px;text-align:center;}
+.ps-prize-amt{font-family:'Bebas Neue',sans-serif;font-size:14px;color:#F5C518;}
+.ps-prize-lbl{font-size:7px;color:#555;text-transform:uppercase;}
+.ps-form{background:#141414;border:1px solid rgba(245,197,24,.15);border-radius:8px;padding:12px;flex:1;}
+.ps-field{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:8px;font-size:9px;color:#888;margin-bottom:6px;}
+.ps-submit{width:100%;background:#D0021B;border:none;border-radius:4px;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:#fff;cursor:pointer;}
+.float-badge{position:absolute;top:-12px;right:-16px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 14px;box-shadow:0 8px 32px rgba(0,0,0,.1);font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;}
+.float-badge span{color:var(--gold);font-size:16px;display:block;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.float-badge2{position:absolute;bottom:-10px;left:-20px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 14px;box-shadow:0 8px 32px rgba(0,0,0,.1);font-size:11px;color:var(--muted);}
+.float-badge2 strong{display:block;color:var(--text);font-size:13px;}
+
+/* ── STATS BAR ── */
+.stats-bar{background:var(--ink);padding:32px 48px;}
+.stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-radius:0;}
+.stat-item{text-align:center;padding:0 24px;border-right:1px solid rgba(255,255,255,.08);}
+.stat-item:last-child{border-right:none;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:1px;color:var(--gold-lt);line-height:1;}
+.stat-desc{font-size:12px;color:#888;margin-top:4px;}
+
+/* ── HOW IT WORKS ── */
+.section{max-width:1100px;margin:0 auto;padding:72px 48px;}
+.section-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.section-title{font-family:'Instrument Serif',serif;font-size:clamp(28px,3vw,42px);line-height:1.15;color:var(--ink);margin-bottom:48px;max-width:520px;}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;}
+.step{position:relative;}
+.step-num{font-family:'Bebas Neue',sans-serif;font-size:48px;color:rgba(200,150,12,.15);line-height:1;margin-bottom:8px;}
+.step-title{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--ink);}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.65;}
+.step-icon{font-size:28px;margin-bottom:10px;}
+.step-connector{position:absolute;top:24px;right:-16px;width:32px;height:1px;background:var(--border);}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.plan{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:28px;position:relative;transition:transform .2s,box-shadow .2s;}
+.plan:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.08);}
+.plan.featured{border-color:var(--gold);background:var(--ink);color:#fff;}
+.plan-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border-radius:20px;white-space:nowrap;}
+.plan-name{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.plan.featured .plan-name{color:rgba(255,255,255,.5);}
+.plan-price{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:.5px;line-height:1;color:var(--ink);margin-bottom:4px;}
+.plan.featured .plan-price{color:#fff;}
+.plan-period{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.plan.featured .plan-period{color:rgba(255,255,255,.4);}
+.plan-features{list-style:none;margin-bottom:24px;}
+.plan-features li{font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;color:var(--text);}
+.plan.featured .plan-features li{border-color:rgba(255,255,255,.08);color:rgba(255,255,255,.8);}
+.plan-features li:last-child{border-bottom:none;}
+.plan-features .check{color:var(--gold);font-size:12px;flex-shrink:0;}
+.plan-btn{width:100%;border-radius:7px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;}
+.plan-btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.plan-btn-outline:hover{background:rgba(0,0,0,.04);}
+.plan-btn-filled{background:var(--gold);color:var(--ink);}
+.plan-btn-filled:hover{background:#B8860C;}
+.plan-btn-white{background:#fff;color:var(--ink);}
+.plan-btn-white:hover{background:#f0f0f0;}
+
+/* ── FORM SECTION ── */
+.signup-section{background:var(--ink);padding:72px 48px;}
+.signup-inner{max-width:780px;margin:0 auto;}
+.signup-header{text-align:center;margin-bottom:48px;}
+.signup-header h2{font-family:'Instrument Serif',serif;font-size:clamp(28px,3vw,40px);color:#fff;margin-bottom:12px;}
+.signup-header p{font-size:14px;color:#888;line-height:1.6;}
+
+.signup-form{background:#161616;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:36px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg.full{grid-column:1/-1;}
+.fg label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#888;}
+.fg input,.fg select{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:12px 14px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus{border-color:rgba(245,197,24,.5);}
+.fg input::placeholder{color:#333;}
+.fg select option{background:#1a1a1a;}
+.form-divider{border:none;border-top:1px solid rgba(255,255,255,.06);margin:8px 0 16px;}
+
+/* Prize config section */
+.prize-config{background:rgba(245,197,24,.04);border:1px solid rgba(245,197,24,.15);border-radius:10px;padding:20px;margin-bottom:20px;}
+.pc-title{font-size:12px;font-weight:600;color:rgba(245,197,24,.8);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.pc-sub{font-size:11px;color:#555;margin-bottom:16px;}
+.prize-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:10px;}
+.prize-field{display:flex;flex-direction:column;gap:5px;}
+.prize-field label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.5px;}
+.prize-field input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:9px 10px;color:#fff;font-size:13px;outline:none;width:100%;}
+.prize-field input:focus{border-color:rgba(245,197,24,.4);}
+.odds-bar{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.odds-bar input[type=range]{flex:1;accent-color:#F5C518;}
+.odds-val{font-size:11px;color:#666;width:28px;text-align:right;}
+.odds-pct{font-size:10px;color:#F5C518;width:36px;}
+
+.submit-area{text-align:center;}
+.big-submit{background:var(--gold);color:var(--ink);border:none;border-radius:8px;padding:16px 48px;font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;}
+.big-submit:hover{background:#B8860C;transform:translateY(-1px);}
+.big-submit:disabled{background:#333;color:#666;cursor:not-allowed;transform:none;}
+.form-note{font-size:11px;color:#555;margin-top:10px;}
+
+/* ── SUCCESS STATE ── */
+#successState{display:none;text-align:center;padding:48px 24px;}
+.success-icon{font-size:52px;margin-bottom:16px;}
+.success-title{font-family:'Instrument Serif',serif;font-size:32px;color:#fff;margin-bottom:10px;}
+.success-msg{font-size:14px;color:#888;margin-bottom:28px;line-height:1.6;}
+.success-links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.success-link{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:14px 22px;color:#fff;text-decoration:none;font-size:13px;font-weight:500;transition:background .15s;}
+.success-link:hover{background:rgba(255,255,255,.12);}
+.dealer-id-box{background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.2);border-radius:8px;padding:16px 24px;margin:20px auto;max-width:380px;}
+.dib-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.dib-val{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:#F5C518;}
+
+/* ── FOOTER ── */
+footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:28px 48px;display:flex;align-items:center;justify-content:space-between;}
+.foot-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:#F5C518;}
+.foot-copy{font-size:11px;color:#555;}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;border:1px solid rgba(74,222,128,.25);color:#4ADE80;padding:12px 22px;border-radius:8px;font-size:13px;z-index:999;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.err{border-color:rgba(248,113,113,.25);color:#F87171;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp .6s ease both;}
+
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;gap:32px;}
+  .hero-visual{display:none;}
+  .steps{grid-template-columns:1fr 1fr;}
+  .pricing-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .prize-row{grid-template-columns:1fr 1fr;}
+  nav{padding:16px 20px;}
+  .section,.signup-section{padding:48px 20px;}
+  .stats-inner{grid-template-columns:1fr 1fr;gap:24px;}
+  .stat-item{border-right:none;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:20px;}
+}
+@media(max-width:600px){
+  .steps{grid-template-columns:1fr;}
+  .prize-row{grid-template-columns:1fr;}
+  .hero{padding:48px 20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">⚡ SPIN <em>&</em> WIN</div>
+  <div class="nav-links">
+    <a href="#how-it-works">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#signup">Get Started</a>
+  </div>
+  <a href="#signup" class="nav-cta">Start Free Trial</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero fade-in">
+  <div class="hero-content">
+    <div class="hero-eyebrow">⚡ For Car Dealerships</div>
+    <h1>Turn Lot Browsers Into <em>Captured Leads</em> — Instantly</h1>
+    <p class="hero-sub">QR stickers on your vehicles launch a prize spin game. Customers enter their info for a chance to win up to $1,000 off. You get the lead the second they submit.</p>
+    <div class="hero-actions">
+      <a href="#signup" class="btn-primary">Get Started Free →</a>
+      <a href="#how-it-works" class="btn-ghost">See How It Works</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="phone-mockup">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="ps-header">
+            <div class="ps-logo">⚡ SPIN &amp; WIN</div>
+            <div class="ps-dealer">Premier Auto Group</div>
+          </div>
+          <div class="ps-body">
+            <div style="text-align:center;margin-bottom:2px">
+              <div style="display:inline-block;background:#D0021B;color:#fff;font-size:7px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:2px;margin-bottom:8px">Exclusive Offer</div>
+            </div>
+            <div class="ps-title">WIN UP TO<br/><span>$1,000 OFF</span></div>
+            <div class="ps-prizes">
+              <div class="ps-prize"><div class="ps-prize-amt">$100</div><div class="ps-prize-lbl">Off</div></div>
+              <div class="ps-prize"><div class="ps-prize-amt">$200</div><div class="ps-prize-lbl">Off</div></div>
+              <div class="ps-prize"><div class="ps-prize-amt">$500</div><div class="ps-prize-lbl">Off</div></div>
+              <div class="ps-prize"><div class="ps-prize-amt">$1K</div><div class="ps-prize-lbl">Off</div></div>
+            </div>
+            <div class="ps-form">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.5px;color:#ccc;margin-bottom:6px">Claim Your Spin</div>
+              <div class="ps-field">Full Name</div>
+              <div class="ps-field">Email Address</div>
+              <div class="ps-field">Phone Number</div>
+              <button class="ps-submit">SPIN THE WHEEL →</button>
+            </div>
+          </div>
+        </div>
+        <div class="float-badge"><span>$1,000</span>just won!</div>
+        <div class="float-badge2"><strong>New Lead Alert</strong>Marcus W. — (602) 555-0142</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num">94%</div><div class="stat-desc">Lead capture rate</div></div>
+    <div class="stat-item"><div class="stat-num">< 30s</div><div class="stat-desc">Avg. time to submit</div></div>
+    <div class="stat-item"><div class="stat-num">$0</div><div class="stat-desc">Setup cost</div></div>
+    <div class="stat-item"><div class="stat-num">∞</div><div class="stat-desc">QR codes per account</div></div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section" id="how-it-works">
+  <div class="section-label">How It Works</div>
+  <div class="section-title">From sticker to captured lead in under 60 seconds</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-icon">🔳</div>
+      <div class="step-title">Print &amp; Stick</div>
+      <div class="step-desc">Generate QR code stickers from your dashboard. Print them on label paper and apply to vehicle windows — takes 15 minutes for a full lot.</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-icon">📱</div>
+      <div class="step-title">Customer Scans</div>
+      <div class="step-desc">A shopper sees the sticker, scans it with their phone camera. No app needed — it opens instantly in their browser.</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-icon">🎰</div>
+      <div class="step-title">They Spin &amp; Win</div>
+      <div class="step-desc">After entering their name, email, and phone, they spin a prize wheel for a chance at $100–$1,000 off. The gamification makes them want to submit.</div>
+      <div class="step-connector"></div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-icon">⚡</div>
+      <div class="step-title">Instant Lead Alert</div>
+      <div class="step-desc">The moment they hit spin, your sales manager gets an email with their full contact info, the vehicle they're looking at, and the prize they won.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div style="background:#F5F3EF;padding:72px 48px" id="pricing">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="section-label">Pricing</div>
+    <div class="section-title" style="margin-bottom:40px">Simple, flat monthly pricing</div>
+    <div class="pricing-grid">
+      <div class="plan">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">$99</div>
+        <div class="plan-period">per month, per location</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span>1 dealership location</li>
+          <li><span class="check">✓</span>Unlimited QR codes</li>
+          <li><span class="check">✓</span>Unlimited leads</li>
+          <li><span class="check">✓</span>Instant email alerts</li>
+          <li><span class="check">✓</span>CSV export</li>
+          <li><span class="check">✓</span>Custom prize amounts</li>
+        </ul>
+        <button class="plan-btn plan-btn-outline" onclick="scrollToSignup('starter')">Get Started</button>
+      </div>
+      <div class="plan featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$199</div>
+        <div class="plan-period">per month, per location</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span>Everything in Starter</li>
+          <li><span class="check">✓</span>Custom branding &amp; colors</li>
+          <li><span class="check">✓</span>Multiple notification emails</li>
+          <li><span class="check">✓</span>Lead status &amp; CRM workflow</li>
+          <li><span class="check">✓</span>Advanced analytics</li>
+          <li><span class="check">✓</span>Priority support</li>
+        </ul>
+        <button class="plan-btn plan-btn-white" onclick="scrollToSignup('pro')">Get Started</button>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Agency</div>
+        <div class="plan-price">$499</div>
+        <div class="plan-period">per month, unlimited locations</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span>Everything in Pro</li>
+          <li><span class="check">✓</span>Unlimited locations</li>
+          <li><span class="check">✓</span>White-label (your brand)</li>
+          <li><span class="check">✓</span>Admin portal for all dealers</li>
+          <li><span class="check">✓</span>API access</li>
+          <li><span class="check">✓</span>Dedicated onboarding</li>
+        </ul>
+        <button class="plan-btn plan-btn-outline" onclick="scrollToSignup('agency')">Get Started</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIGNUP FORM -->
+<div class="signup-section" id="signup">
+  <div class="signup-inner">
+    <div class="signup-header">
+      <h2>Set Up Your Dealership in 5 Minutes</h2>
+      <p>Fill out the form below — we'll create your account, set up your first QR codes,<br/>and you'll be capturing leads today.</p>
+    </div>
+
+    <div class="signup-form" id="signupForm">
+      <div class="form-grid">
+        <div class="fg">
+          <label>Dealership Name *</label>
+          <input type="text" id="sName" placeholder="Premier Auto Group"/>
+        </div>
+        <div class="fg">
+          <label>Plan</label>
+          <select id="sPlan">
+            <option value="starter">Starter — $99/mo</option>
+            <option value="pro" selected>Pro — $199/mo</option>
+            <option value="agency">Agency — $499/mo</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Sales Manager Name *</label>
+          <input type="text" id="sContact" placeholder="John Smith"/>
+        </div>
+        <div class="fg">
+          <label>Notification Email *</label>
+          <input type="email" id="sEmail" placeholder="sales@yourdealership.com"/>
+        </div>
+        <div class="fg">
+          <label>Phone</label>
+          <input type="tel" id="sPhone" placeholder="(555) 000-0000"/>
+        </div>
+        <div class="fg">
+          <label>City / State</label>
+          <input type="text" id="sCity" placeholder="Phoenix, AZ"/>
+        </div>
+      </div>
+
+      <hr class="form-divider"/>
+
+      <!-- Prize customization -->
+      <div class="prize-config">
+        <div class="pc-title">🎰 Customize Your Prize Wheel</div>
+        <div class="pc-sub">Set the prize amounts and how often each one is awarded. Higher weight = awarded more frequently. You can change these anytime.</div>
+
+        <div id="prizeRows">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div style="font-size:10px;color:#555;margin-top:8px;text-align:right" id="totalOdds"></div>
+      </div>
+
+      <div class="submit-area">
+        <button class="big-submit" id="signupBtn" onclick="handleSignup()">Create My Account →</button>
+        <div class="form-note">No credit card required for your 30-day free trial.</div>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="successState">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">You're all set!</div>
+      <div class="success-msg">Your dealership account has been created. Check your email for setup instructions and your first QR sticker sheet.</div>
+      <div class="dealer-id-box">
+        <div class="dib-label">Your Dealer ID</div>
+        <div class="dib-val" id="newDealerId">—</div>
+        <div style="font-size:10px;color:#555;margin-top:4px">Save this — you'll use it to access your dashboard</div>
+      </div>
+      <div class="success-links">
+        <a href="#" class="success-link" id="dashLink">📊 Open Dashboard</a>
+        <a href="#" class="success-link" id="spinLink">🎰 Preview Spin Page</a>
+        <a href="#" class="success-link" id="stickerLink">🔳 Print Stickers</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo">⚡ SPIN &amp; WIN</div>
+  <div class="foot-copy">© 2026 Spin & Win. All rights reserved.</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';  // same origin
+
+// ── Prize config state ────────────────────────────────────────────────────────
+let prizes = [
+  { label:'$100 Off',  amount:100,  weight:50,  color:'#4ADE80' },
+  { label:'$200 Off',  amount:200,  weight:30,  color:'#60A5FA' },
+  { label:'$500 Off',  amount:500,  weight:15,  color:'#F87171' },
+  { label:'$1,000 Off',amount:1000, weight:5,   color:'#F5C518' },
+];
+
+function renderPrizeRows() {
+  const total = prizes.reduce((s,p)=>s+p.weight,0);
+  document.getElementById('prizeRows').innerHTML = prizes.map((p,i) => `
+    <div class="prize-row" style="border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:12px;margin-bottom:12px">
+      <div class="prize-field">
+        <label style="color:${p.color}">Prize ${i+1} — Amount ($)</label>
+        <input type="number" value="${p.amount}" min="1" max="99999"
+          oninput="prizes[${i}].amount=+this.value; updatePrizeLabel(${i})"
+          style="border-color:rgba(${hexToRgb(p.color)},.25)"/>
+      </div>
+      <div class="prize-field" style="grid-column:span 2">
+        <label style="color:${p.color}">Winning Odds (weight: <span id="wval${i}">${p.weight}</span> — <span id="wpct${i}">${Math.round(p.weight/total*100)}%</span> chance)</label>
+        <div class="odds-bar">
+          <input type="range" min="0" max="100" value="${p.weight}"
+            oninput="prizes[${i}].weight=+this.value; document.getElementById('wval${i}').textContent=this.value; updateOdds()"
+            style="accent-color:${p.color}"/>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  updateOdds();
+}
+
+function updateOdds() {
+  const total = prizes.reduce((s,p)=>s+p.weight,0)||1;
+  prizes.forEach((p,i) => {
+    const el = document.getElementById(`wpct${i}`);
+    if (el) el.textContent = Math.round(p.weight/total*100)+'%';
+  });
+  document.getElementById('totalOdds').textContent =
+    `Total weight: ${total} — ${prizes.map((p,i)=>`$${p.amount}: ${Math.round(p.weight/total*100)}%`).join(' · ')}`;
+}
+
+function updatePrizeLabel(i) {
+  const el = document.querySelector(`#prizeRows .prize-row:nth-child(${i+1}) label`);
+  if (el) el.childNodes[0].textContent = `Prize ${i+1} — Amount ($)`;
+}
+
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '255,255,255';
+}
+
+renderPrizeRows();
+
+// ── Scroll to signup with plan pre-selected ────────────────────────────────
+function scrollToSignup(plan) {
+  document.getElementById('sPlan').value = plan;
+  document.getElementById('signup').scrollIntoView({behavior:'smooth'});
+}
+
+// ── Phone format ──────────────────────────────────────────────────────────────
+document.getElementById('sPhone').addEventListener('input', function() {
+  let v = this.value.replace(/\D/g,'');
+  if (v.length>=6) v=`(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6,10)}`;
+  else if (v.length>=3) v=`(${v.slice(0,3)}) ${v.slice(3)}`;
+  this.value=v;
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='ok', dur=3500) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(type==='err'?' err':'')+' show';
+  setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+async function handleSignup() {
+  const name    = document.getElementById('sName').value.trim();
+  const contact = document.getElementById('sContact').value.trim();
+  const email   = document.getElementById('sEmail').value.trim();
+  const plan    = document.getElementById('sPlan').value;
+  const phone   = document.getElementById('sPhone').value.trim();
+  const city    = document.getElementById('sCity').value.trim();
+
+  if (!name)  return toast('Please enter your dealership name.','err');
+  if (!contact) return toast('Please enter the sales manager name.','err');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Please enter a valid email.','err');
+
+  const btn = document.getElementById('signupBtn');
+  btn.disabled=true; btn.textContent='Creating Account…';
+
+  const payload = {
+    name, contact, email, phone, city, plan,
+    prizes: prizes.map(p=>({amount:p.amount, weight:p.weight}))
+  };
+
+  try {
+    const res  = await fetch(`${API}/api/dealers/signup`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Server error');
+
+    // Show success
+    document.getElementById('newDealerId').textContent = data.dealerId;
+    document.getElementById('dashLink').href   = `/dashboard.html?dealer=${data.dealerId}`;
+    document.getElementById('spinLink').href   = `/?qr=${data.firstQrId}&dealer=${data.dealerId}`;
+    document.getElementById('stickerLink').href= `/sticker.html?qr=${data.firstQrId}&dealer=${data.dealerId}&name=${encodeURIComponent(name)}`;
+    document.getElementById('signupForm').style.display='none';
+    document.getElementById('successState').style.display='block';
+  } catch(e) {
+    // Demo mode — simulate success
+    const demoId = 'DEALER-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    const demoQr = 'QR-LOT-001';
+    document.getElementById('newDealerId').textContent = demoId;
+    document.getElementById('dashLink').href   = `/dashboard.html?dealer=${demoId}`;
+    document.getElementById('spinLink').href   = `/?qr=${demoQr}&dealer=${demoId}`;
+    document.getElementById('stickerLink').href= `/sticker.html?qr=${demoQr}&dealer=${demoId}&name=${encodeURIComponent(name)}`;
+    document.getElementById('signupForm').style.display='none';
+    document.getElementById('successState').style.display='block';
+  }
+}
+</script>
+</body>
+</html>

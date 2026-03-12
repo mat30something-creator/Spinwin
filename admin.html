@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spin & Win — Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--red:#D0021B;--gold:#F5C518;--dark:#080808;--mid:#111;--card:#161616;--card2:#1C1C1C;--border:rgba(255,255,255,.07);--text:#F0EDE6;--muted:#666;--green:#22C55E;--blue:#60A5FA;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+/* ── LOGIN GATE ── */
+#loginGate{position:fixed;inset:0;background:var(--dark);z-index:200;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px;width:360px;text-align:center;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--gold);margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:28px;}
+.login-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px;}
+.login-input:focus{border-color:rgba(245,197,24,.4);}
+.login-btn{width:100%;background:var(--gold);color:#0a0a0a;border:none;border-radius:7px;padding:12px;font-weight:700;font-size:14px;cursor:pointer;}
+.login-btn:hover{background:#E8B000;}
+.login-note{font-size:10px;color:#444;margin-top:10px;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--mid);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;flex-shrink:0;}
+.sb-top{padding:20px 18px;border-bottom:1px solid var(--border);}
+.sb-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);}
+.sb-logo span{display:block;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-top:2px;font-family:'DM Sans',sans-serif;font-weight:400;}
+.nav{display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:12px;color:var(--muted);cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.nav:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.nav.active{color:var(--gold);border-left-color:var(--gold);background:rgba(245,197,24,.04);}
+.nav-icon{font-size:14px;}
+.nav-badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;margin-left:auto;}
+.nav-badge.green{background:var(--green);}
+.sb-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);}
+.sb-foot strong{color:#888;display:block;margin-bottom:1px;}
+
+.main{flex:1;padding:28px 32px;overflow-y:auto;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap;}
+.pt{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.8px;}
+.ps{font-size:11px;color:var(--muted);margin-top:2px;}
+.btn{background:var(--red);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.btn:hover{background:#B50018;}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-o:hover{background:rgba(255,255,255,.04);}
+.btn-gold{background:var(--gold);color:#0a0a0a;}
+.btn-gold:hover{background:#E8B000;}
+.btn-green{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.btns{display:flex;gap:8px;flex-wrap:wrap;}
+
+.tab-c{display:none;}
+.tab-c.active{display:block;animation:fadeUp .3s ease both;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px;}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:16px;}
+.sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;}
+.sd{font-size:10px;margin-top:4px;}
+.pos{color:var(--green);}
+.neg{color:var(--red);}
+.neu{color:var(--muted);}
+
+/* ── TABLE ── */
+.tw{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);}
+th{text-align:left;padding:10px 14px;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.035);transition:background .1s;cursor:pointer;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,.025);}
+td{padding:11px 14px;font-size:12px;vertical-align:middle;}
+.cell-name{font-weight:500;font-size:13px;}
+.cell-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.plan-pill{display:inline-block;border-radius:3px;padding:2px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.plan-starter{background:rgba(96,165,250,.1);color:#60A5FA;}
+.plan-pro{background:rgba(245,197,24,.1);color:#F5C518;}
+.plan-agency{background:rgba(34,197,94,.1);color:#22C55E;}
+
+.status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.dot-active{background:var(--green);}
+.dot-trial{background:var(--gold);}
+.dot-inactive{background:var(--muted);}
+
+.ab{background:transparent;border:1px solid var(--border);border-radius:3px;padding:3px 8px;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.ab:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+.ab.red{border-color:rgba(208,2,27,.2);color:#F87171;}
+.ab.red:hover{background:rgba(208,2,27,.08);}
+.ab.green{border-color:rgba(34,197,94,.2);color:#4ADE80;}
+
+/* ── MODAL ── */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.mo.open{display:flex;}
+.md{background:var(--card2);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:28px;width:560px;max-width:100%;animation:fadeUp .2s ease both;max-height:90vh;overflow-y:auto;}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.mt2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.8px;}
+.mc{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;}
+.mc:hover{color:var(--text);}
+
+/* Modal fields */
+.mfg{margin-bottom:14px;}
+.mfg label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:5px;}
+.mfg input,.mfg select{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
+.mfg input:focus,.mfg select:focus{border-color:rgba(245,197,24,.4);}
+.mfg select option{background:#1a1a1a;}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
+
+/* Prize editor in modal */
+.prize-editor{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
+.pe-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.pe-row{display:grid;grid-template-columns:80px 1fr 60px 40px;align-items:center;gap:10px;margin-bottom:8px;}
+.pe-label{font-size:10px;padding:4px 8px;border-radius:3px;text-align:center;font-weight:600;}
+.pe-input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:7px 9px;color:var(--text);font-size:12px;outline:none;width:100%;}
+.pe-input:focus{border-color:rgba(245,197,24,.3);}
+.pe-pct{font-size:10px;color:var(--gold);text-align:right;}
+.pe-weight{font-size:10px;color:var(--muted);}
+.odds-total{font-size:10px;color:var(--muted);text-align:right;margin-top:4px;}
+
+.ma{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;}
+
+/* ── Revenue chart ── */
+.rev-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.ct{font-size:12px;font-weight:600;margin-bottom:14px;color:var(--text);}
+
+.month-bars{display:flex;align-items:flex-end;gap:6px;height:80px;}
+.mb-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.mb-val{font-size:8px;color:var(--muted);}
+.mb-bar{width:100%;border-radius:3px 3px 0 0;background:rgba(245,197,24,.7);}
+.mb-lbl{font-size:8px;color:var(--muted);}
+
+.plan-dist{display:flex;flex-direction:column;gap:8px;}
+.pd-row{display:flex;align-items:center;gap:8px;}
+.pd-label{font-size:11px;color:var(--muted);width:60px;}
+.pd-bar{flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;}
+.pd-fill{height:100%;border-radius:3px;}
+.pd-count{font-size:10px;color:var(--muted);width:20px;text-align:right;}
+
+/* ── Impersonation banner ── */
+.impersonate-bar{background:rgba(245,197,24,.1);border-bottom:1px solid rgba(245,197,24,.2);padding:8px 24px;display:none;align-items:center;justify-content:space-between;font-size:12px;color:#F5C518;}
+.imp-exit{background:transparent;border:1px solid rgba(245,197,24,.3);border-radius:4px;padding:4px 10px;color:#F5C518;font-size:11px;cursor:pointer;}
+
+/* ── Filters ── */
+.fi-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.fi{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-size:12px;outline:none;}
+.fi:focus{border-color:rgba(245,197,24,.4);}
+.fi-search{width:200px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:768px){.sidebar{display:none;}.main{padding:16px;}.rev-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="loginGate">
+  <div class="login-box">
+    <div class="login-logo">⚡ SPIN &amp; WIN</div>
+    <div class="login-sub">Super Admin Portal</div>
+    <input class="login-input" type="email" id="loginEmail" placeholder="admin@spinwinleads.com"/>
+    <input class="login-input" type="password" id="loginPass" placeholder="Password" style="margin-bottom:16px"/>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-note">Demo: any email + password "admin"</div>
+  </div>
+</div>
+
+<!-- IMPERSONATION BAR -->
+<div class="impersonate-bar" id="impBar">
+  <span>👁 Viewing as: <strong id="impName">—</strong></span>
+  <button class="imp-exit" onclick="exitImpersonate()">✕ Exit</button>
+</div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-top">
+    <div class="sb-logo">⚡ SPIN &amp; WIN<span>SUPER ADMIN</span></div>
+  </div>
+  <div style="height:8px"></div>
+  <div class="nav active" onclick="switchTab('dealers',this)"><span class="nav-icon">🏢</span>All Dealers<span class="nav-badge green" id="activeCount">0</span></div>
+  <div class="nav" onclick="switchTab('revenue',this)"><span class="nav-icon">💰</span>Revenue</div>
+  <div class="nav" onclick="switchTab('leads',this)"><span class="nav-icon">📋</span>All Leads</div>
+  <div class="nav" onclick="switchTab('prizes',this)"><span class="nav-icon">🎰</span>Prize Defaults</div>
+  <div class="nav" onclick="switchTab('settings',this)"><span class="nav-icon">⚙️</span>Platform Settings</div>
+  <div class="sb-foot"><strong>Admin</strong>admin@spinwinleads.com</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ── DEALERS TAB ── -->
+  <div id="tab-dealers" class="tab-c active">
+    <div class="ph">
+      <div><div class="pt">All Dealers</div><div class="ps">Manage every dealership on the platform</div></div>
+      <div class="btns">
+        <button class="btn btn-o" onclick="exportDealers()">⬇ Export</button>
+        <button class="btn btn-gold" onclick="openNewDealerModal()">+ Add Dealer</button>
+      </div>
+    </div>
+
+    <div class="stats" id="adminStats">
+      <div class="sc"><div class="sl">Total Dealers</div><div class="sv" id="asTotalDealers">—</div><div class="sd pos" id="asNewThisMonth">— this month</div></div>
+      <div class="sc"><div class="sl">Active Trials</div><div class="sv" id="asTrials">—</div><div class="sd neu">30-day trial</div></div>
+      <div class="sc"><div class="sl">Paying Dealers</div><div class="sv" id="asPaying">—</div><div class="sd pos">subscribed</div></div>
+      <div class="sc"><div class="sl">Total Leads</div><div class="sv" id="asTotalLeads">—</div><div class="sd pos" id="asLeadsToday">— today</div></div>
+      <div class="sc"><div class="sl">MRR</div><div class="sv" id="asMRR">—</div><div class="sd pos" id="asMRRChange">↑ growing</div></div>
+    </div>
+
+    <div class="fi-bar">
+      <input class="fi fi-search" type="text" placeholder="🔍  Search dealers…" id="dealerSearch" oninput="filterDealers()"/>
+      <select class="fi" id="planFilter" onchange="filterDealers()">
+        <option value="">All Plans</option>
+        <option value="starter">Starter</option>
+        <option value="pro">Pro</option>
+        <option value="agency">Agency</option>
+      </select>
+      <select class="fi" id="statusFilter2" onchange="filterDealers()">
+        <option value="">All Status</option>
+        <option value="active">Active</option>
+        <option value="trial">Trial</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Dealership</th><th>Contact</th><th>Plan</th><th>Leads</th>
+          <th>QR Codes</th><th>Status</th><th>Joined</th><th></th>
+        </tr></thead>
+        <tbody id="dealersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── REVENUE TAB ── -->
+  <div id="tab-revenue" class="tab-c">
+    <div class="ph"><div><div class="pt">Revenue</div><div class="ps">Subscription &amp; MRR overview</div></div></div>
+    <div class="stats">
+      <div class="sc"><div class="sl">MRR</div><div class="sv" style="color:var(--gold)" id="revMRR">—</div><div class="sd pos">monthly recurring</div></div>
+      <div class="sc"><div class="sl">ARR (est.)</div><div class="sv" id="revARR">—</div><div class="sd neu">annualized</div></div>
+      <div class="sc"><div class="sl">Avg per Dealer</div><div class="sv" id="revAvg">—</div><div class="sd neu">per month</div></div>
+      <div class="sc"><div class="sl">Churn Rate</div><div class="sv">2.1%</div><div class="sd neu">last 30 days</div></div>
+      <div class="sc"><div class="sl">LTV (est.)</div><div class="sv" id="revLTV">—</div><div class="sd pos">per dealer</div></div>
+    </div>
+    <div class="rev-grid">
+      <div class="cc">
+        <div class="ct">Monthly Revenue (Last 6 Months)</div>
+        <div class="month-bars" id="revChart"></div>
+        <div style="display:flex;gap:8px;margin-top:6px;" id="revChartLabels"></div>
+      </div>
+      <div class="cc">
+        <div class="ct">Plan Distribution</div>
+        <div class="plan-dist" id="planDist"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ALL LEADS TAB ── -->
+  <div id="tab-leads" class="tab-c">
+    <div class="ph">
+      <div><div class="pt">All Leads</div><div class="ps">Every lead across all dealers</div></div>
+      <button class="btn btn-o" onclick="exportAllLeads()">⬇ Export All</button>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Customer</th><th>Dealership</th><th>Prize</th><th>Vehicle</th><th>Status</th><th>Date</th>
+        </tr></thead>
+        <tbody id="allLeadsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PRIZE DEFAULTS ── -->
+  <div id="tab-prizes" class="tab-c">
+    <div class="ph"><div><div class="pt">Prize Defaults</div><div class="ps">Default prize config for new dealers (each dealer can override)</div></div></div>
+    <div style="max-width:520px;">
+      <div class="cc">
+        <div class="ct">Default Prize Configuration</div>
+        <div id="defaultPrizeEditor"></div>
+        <button class="btn btn-gold" style="margin-top:16px" onclick="saveDefaultPrizes()">Save Defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div id="tab-settings" class="tab-c">
+    <div class="ph"><div><div class="pt">Platform Settings</div><div class="ps">Global configuration</div></div></div>
+    <div style="max-width:500px;display:flex;flex-direction:column;gap:14px;">
+      <div class="cc">
+        <div class="ct">Trial Period</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+          <input type="number" value="30" min="1" max="90" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;width:80px"/>
+          <span style="font-size:12px;color:var(--muted)">day free trial for new dealers</span>
+          <button class="btn" style="margin-left:auto">Save</button>
+        </div>
+      </div>
+      <div class="cc">
+        <div class="ct">Admin Notification Email</div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <input type="email" value="admin@spinwinleads.com" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
+          <button class="btn">Save</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">Receive alerts when new dealers sign up</div>
+      </div>
+      <div class="cc">
+        <div class="ct">Platform Name / Branding</div>
+        <div style="margin-top:4px;display:flex;flex-direction:column;gap:8px;">
+          <input type="text" value="Spin & Win" placeholder="Platform Name" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
+          <input type="text" value="spinwinleads.com" placeholder="Domain" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
+          <button class="btn btn-gold" style="width:fit-content">Save Branding</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- Dealer Detail / Edit Modal -->
+<div class="mo" id="dealerModal">
+  <div class="md">
+    <div class="mh">
+      <div class="mt2" id="dmTitle">Edit Dealer</div>
+      <button class="mc" onclick="closeModal('dealerModal')">✕</button>
+    </div>
+    <div id="dealerModalBody"></div>
+    <div class="ma" id="dealerModalActions"></div>
+  </div>
+</div>
+
+<!-- New Dealer Modal -->
+<div class="mo" id="newDealerModal">
+  <div class="md">
+    <div class="mh">
+      <div class="mt2">Add New Dealer</div>
+      <button class="mc" onclick="closeModal('newDealerModal')">✕</button>
+    </div>
+    <div class="mrow">
+      <div class="mfg"><label>Dealership Name *</label><input type="text" id="ndName" placeholder="Premier Auto Group"/></div>
+      <div class="mfg"><label>Plan</label><select id="ndPlan"><option value="starter">Starter $99</option><option value="pro" selected>Pro $199</option><option value="agency">Agency $499</option></select></div>
+    </div>
+    <div class="mrow">
+      <div class="mfg"><label>Contact Name</label><input type="text" id="ndContact" placeholder="Sales Manager"/></div>
+      <div class="mfg"><label>Notification Email *</label><input type="email" id="ndEmail" placeholder="sales@dealer.com"/></div>
+    </div>
+    <div class="mrow">
+      <div class="mfg"><label>Phone</label><input type="tel" id="ndPhone" placeholder="(555) 000-0000"/></div>
+      <div class="mfg"><label>City / State</label><input type="text" id="ndCity" placeholder="Phoenix, AZ"/></div>
+    </div>
+    <hr class="mdiv"/>
+    <div class="prize-editor">
+      <div class="pe-title">Prize Configuration</div>
+      <div id="newDealerPrizes"></div>
+    </div>
+    <div class="ma">
+      <button class="btn btn-gold" onclick="createDealerFromAdmin()">Create Dealer</button>
+      <button class="btn btn-o" onclick="closeModal('newDealerModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const PLAN_PRICES = { starter:99, pro:199, agency:499 };
+
+// Demo data
+let dealers = [
+  {id:'DEALER-DEMO',  name:'Premier Auto Group',  contact:'John Smith',    email:'sales@premierauto.com',    phone:'(602) 555-0100',city:'Phoenix, AZ',    plan:'pro',     status:'active', leads:47, qrs:5, joined:'2026-01-15'},
+  {id:'DEALER-A1B2',  name:'Desert Motors',        contact:'Maria Garcia',  email:'maria@desertmotors.com',   phone:'(480) 555-0200',city:'Scottsdale, AZ', plan:'starter', status:'active', leads:23, qrs:3, joined:'2026-02-03'},
+  {id:'DEALER-C3D4',  name:'Valley Ford',          contact:'Tom Williams',  email:'tom@valleyford.com',       phone:'(623) 555-0310',city:'Glendale, AZ',   plan:'agency',  status:'active', leads:89, qrs:12,joined:'2026-01-28'},
+  {id:'DEALER-E5F6',  name:'Sunset Chevy',         contact:'Lisa Chen',     email:'lisa@sunsetchevy.com',     phone:'(602) 555-0421',city:'Tempe, AZ',      plan:'pro',     status:'trial',  leads:8,  qrs:2, joined:'2026-03-01'},
+  {id:'DEALER-G7H8',  name:'Mesa Auto Mall',       contact:'Dave Patel',    email:'dave@mesaauto.com',        phone:'(480) 555-0532',city:'Mesa, AZ',       plan:'starter', status:'trial',  leads:5,  qrs:2, joined:'2026-03-05'},
+  {id:'DEALER-I9J0',  name:'Chandler Imports',     contact:'Susan Lee',     email:'susan@chandlerimports.com',phone:'(480) 555-0641',city:'Chandler, AZ',   plan:'pro',     status:'inactive',leads:0, qrs:1, joined:'2026-02-10'},
+];
+
+let allLeads = [
+  {name:'Marcus Webb',   dealer:'Premier Auto Group', prize:'$1,000',stock:'2024 Ford F-150',   status:'New',       date:'2026-03-09'},
+  {name:'Sandra Flores', dealer:'Desert Motors',       prize:'$100', stock:'2023 Chevy Tahoe',  status:'Contacted', date:'2026-03-09'},
+  {name:'Tyler Brooks',  dealer:'Valley Ford',         prize:'$200', stock:'2025 Toyota RAV4',  status:'New',       date:'2026-03-09'},
+  {name:'Diana Nguyen',  dealer:'Premier Auto Group',  prize:'$500', stock:'2024 Honda CR-V',   status:'Contacted', date:'2026-03-08'},
+  {name:'James Ortega',  dealer:'Sunset Chevy',        prize:'$100', stock:'2024 Silverado',    status:'New',       date:'2026-03-08'},
+  {name:'Kendra Mills',  dealer:'Valley Ford',         prize:'$200', stock:'2023 BMW X5',       status:'Closed',    date:'2026-03-07'},
+  {name:'Robert Chang',  dealer:'Mesa Auto Mall',      prize:'$100', stock:'2024 Jeep Cherokee', status:'New',      date:'2026-03-07'},
+];
+
+let defaultPrizes = [
+  {amount:100, weight:50, color:'#4ADE80'},
+  {amount:200, weight:30, color:'#60A5FA'},
+  {amount:500, weight:15, color:'#F87171'},
+  {amount:1000,weight:5,  color:'#F5C518'},
+];
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+function doLogin() {
+  const pass = document.getElementById('loginPass').value;
+  if (pass === 'admin') {
+    document.getElementById('loginGate').style.display='none';
+    init();
+  } else {
+    document.getElementById('loginPass').style.borderColor='rgba(208,2,27,.5)';
+    setTimeout(()=>document.getElementById('loginPass').style.borderColor='',1500);
+  }
+}
+document.getElementById('loginPass').addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  filterDealers();
+  updateAdminStats();
+  renderAllLeads();
+  renderDefaultPrizeEditor();
+}
+
+// ── Tab switch ────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-c').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if (name==='revenue') renderRevenue();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function updateAdminStats() {
+  const total   = dealers.length;
+  const trials  = dealers.filter(d=>d.status==='trial').length;
+  const paying  = dealers.filter(d=>d.status==='active').length;
+  const active  = paying + trials;
+  const totalLeads = dealers.reduce((s,d)=>s+d.leads,0);
+  const mrr     = dealers.filter(d=>d.status==='active').reduce((s,d)=>s+PLAN_PRICES[d.plan],0);
+  document.getElementById('asTotalDealers').textContent = total;
+  document.getElementById('asTrials').textContent       = trials;
+  document.getElementById('asPaying').textContent       = paying;
+  document.getElementById('asTotalLeads').textContent   = totalLeads;
+  document.getElementById('asMRR').textContent          = '$'+mrr.toLocaleString();
+  document.getElementById('activeCount').textContent    = active;
+}
+
+// ── Dealers table ─────────────────────────────────────────────────────────────
+function filterDealers() {
+  const q  = (document.getElementById('dealerSearch').value||'').toLowerCase();
+  const pf = document.getElementById('planFilter').value;
+  const sf = document.getElementById('statusFilter2').value;
+  const filtered = dealers.filter(d =>
+    (!q || d.name.toLowerCase().includes(q) || d.email.toLowerCase().includes(q)) &&
+    (!pf || d.plan===pf) &&
+    (!sf || d.status===sf)
+  );
+  const tbody = document.getElementById('dealersBody');
+  tbody.innerHTML = filtered.map(d=>`
+    <tr onclick="openDealerModal('${d.id}')">
+      <td><div class="cell-name">${esc(d.name)}</div><div class="cell-sub">${esc(d.city)}</div></td>
+      <td><div style="font-size:12px">${esc(d.contact)}</div><div class="cell-sub">${esc(d.email)}</div></td>
+      <td><span class="plan-pill plan-${d.plan}">${d.plan}</span></td>
+      <td style="font-family:'Bebas Neue',sans-serif;font-size:18px">${d.leads}</td>
+      <td style="color:var(--muted);font-size:12px">${d.qrs}</td>
+      <td><span class="status-pill"><span class="dot dot-${d.status}"></span>${d.status}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${fmtDate(d.joined)}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="ab green" onclick="event.stopPropagation();impersonate('${d.id}','${esc(d.name)}')">View Dashboard</button>
+        <button class="ab" onclick="event.stopPropagation();openDealerModal('${d.id}')">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Dealer modal ──────────────────────────────────────────────────────────────
+function openDealerModal(id) {
+  const d = dealers.find(x=>x.id===id);
+  if (!d) return;
+  document.getElementById('dmTitle').textContent = d.name;
+
+  // Build prize editor for this dealer
+  const prizes = d.prizes || [...defaultPrizes];
+
+  document.getElementById('dealerModalBody').innerHTML = `
+    <div class="mrow">
+      <div class="mfg"><label>Dealership Name</label><input type="text" id="dmName" value="${esc(d.name)}"/></div>
+      <div class="mfg"><label>Plan</label><select id="dmPlan">
+        <option value="starter"${d.plan==='starter'?' selected':''}>Starter $99/mo</option>
+        <option value="pro"${d.plan==='pro'?' selected':''}>Pro $199/mo</option>
+        <option value="agency"${d.plan==='agency'?' selected':''}>Agency $499/mo</option>
+      </select></div>
+    </div>
+    <div class="mrow">
+      <div class="mfg"><label>Notification Email</label><input type="email" id="dmEmail" value="${esc(d.email)}"/></div>
+      <div class="mfg"><label>Status</label><select id="dmStatus">
+        <option value="trial"${d.status==='trial'?' selected':''}>Trial</option>
+        <option value="active"${d.status==='active'?' selected':''}>Active</option>
+        <option value="inactive"${d.status==='inactive'?' selected':''}>Inactive</option>
+      </select></div>
+    </div>
+    <hr class="mdiv"/>
+    <div class="prize-editor">
+      <div class="pe-title">Prize Configuration — Override for This Dealer</div>
+      ${renderPrizeEditorHTML(prizes, 'dm')}
+      <div class="odds-total" id="dmOddsTotal"></div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:4px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px">Quick Stats</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px">${d.leads}</div><div style="font-size:10px;color:var(--muted)">Total Leads</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px">${d.qrs}</div><div style="font-size:10px;color:var(--muted)">QR Codes</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px">$${PLAN_PRICES[d.plan]}</div><div style="font-size:10px;color:var(--muted)">MRR</div></div>
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px">${fmtDate(d.joined)}</div><div style="font-size:10px;color:var(--muted)">Joined</div></div>
+      </div>
+    </div>
+  `;
+
+  updatePrizeOdds('dm', prizes.length);
+
+  document.getElementById('dealerModalActions').innerHTML = `
+    <button class="btn btn-gold" onclick="saveDealerChanges('${id}')">Save Changes</button>
+    <button class="btn btn-green" onclick="impersonate('${id}','${esc(d.name)}');closeModal('dealerModal')">View Dashboard →</button>
+    <button class="btn btn-o" onclick="closeModal('dealerModal')">Cancel</button>
+    <button class="btn ab red" style="margin-left:auto" onclick="suspendDealer('${id}')">Suspend</button>
+  `;
+
+  document.getElementById('dealerModal').classList.add('open');
+}
+
+function renderPrizeEditorHTML(prizes, prefix) {
+  const total = prizes.reduce((s,p)=>s+p.weight,0)||1;
+  return prizes.map((p,i)=>`
+    <div class="pe-row">
+      <span class="pe-label" style="background:rgba(${hexToRgb(p.color)},.1);color:${p.color}">$${p.amount} Off</span>
+      <input class="pe-input" type="number" id="${prefix}Amt${i}" value="${p.amount}" min="1"
+        placeholder="Prize $" oninput="updatePrizeOdds('${prefix}',${prizes.length})"/>
+      <input class="pe-input" type="number" id="${prefix}Wt${i}" value="${p.weight}" min="0" max="100"
+        placeholder="Weight" oninput="updatePrizeOdds('${prefix}',${prizes.length})"/>
+      <div class="pe-pct" id="${prefix}Pct${i}">${Math.round(p.weight/total*100)}%</div>
+    </div>
+  `).join('');
+}
+
+function updatePrizeOdds(prefix, count) {
+  let total = 0;
+  for (let i=0;i<count;i++) {
+    const wt = parseInt(document.getElementById(`${prefix}Wt${i}`)?.value)||0;
+    total+=wt;
+  }
+  if (!total) total=1;
+  for (let i=0;i<count;i++) {
+    const wt = parseInt(document.getElementById(`${prefix}Wt${i}`)?.value)||0;
+    const el = document.getElementById(`${prefix}Pct${i}`);
+    if (el) el.textContent = Math.round(wt/total*100)+'%';
+  }
+  const totEl = document.getElementById(`${prefix}OddsTotal`);
+  if (totEl) totEl.textContent = `Total weight: ${total}`;
+}
+
+function saveDealerChanges(id) {
+  const d = dealers.find(x=>x.id===id);
+  if (!d) return;
+  d.name   = document.getElementById('dmName').value   || d.name;
+  d.plan   = document.getElementById('dmPlan').value   || d.plan;
+  d.email  = document.getElementById('dmEmail').value  || d.email;
+  d.status = document.getElementById('dmStatus').value || d.status;
+  // Save prize overrides
+  d.prizes = defaultPrizes.map((_,i)=>({
+    amount: parseInt(document.getElementById(`dmAmt${i}`)?.value)||defaultPrizes[i].amount,
+    weight: parseInt(document.getElementById(`dmWt${i}`)?.value)||defaultPrizes[i].weight,
+    color:  defaultPrizes[i].color
+  }));
+  // In production: PATCH /api/admin/dealers/:id
+  closeModal('dealerModal');
+  filterDealers();
+  updateAdminStats();
+  toast('Dealer updated!');
+}
+
+function suspendDealer(id) {
+  if (!confirm('Suspend this dealer?')) return;
+  const d = dealers.find(x=>x.id===id);
+  if (d) d.status='inactive';
+  closeModal('dealerModal');
+  filterDealers();
+  updateAdminStats();
+  toast('Dealer suspended.');
+}
+
+// ── Impersonate ───────────────────────────────────────────────────────────────
+function impersonate(id, name) {
+  window.open(`/dashboard.html?dealer=${id}`, '_blank');
+}
+
+function exitImpersonate() {
+  document.getElementById('impBar').style.display='none';
+}
+
+// ── New dealer from admin ─────────────────────────────────────────────────────
+function openNewDealerModal() {
+  renderNewDealerPrizes();
+  document.getElementById('newDealerModal').classList.add('open');
+}
+
+function renderNewDealerPrizes() {
+  document.getElementById('newDealerPrizes').innerHTML =
+    renderPrizeEditorHTML(defaultPrizes, 'nd') +
+    `<div class="odds-total" id="ndOddsTotal"></div>`;
+  ['ndWt0','ndWt1','ndWt2','ndWt3'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', ()=>updatePrizeOdds('nd',4));
+  });
+  updatePrizeOdds('nd', 4);
+}
+
+function createDealerFromAdmin() {
+  const name  = document.getElementById('ndName').value.trim();
+  const email = document.getElementById('ndEmail').value.trim();
+  if (!name || !email) return toast('Name and email required','err');
+
+  const id = 'DEALER-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  const prizes = defaultPrizes.map((_,i)=>({
+    amount: parseInt(document.getElementById(`ndAmt${i}`)?.value)||defaultPrizes[i].amount,
+    weight: parseInt(document.getElementById(`ndWt${i}`)?.value)||defaultPrizes[i].weight,
+    color:  defaultPrizes[i].color
+  }));
+
+  dealers.unshift({
+    id, name, email, prizes,
+    contact: document.getElementById('ndContact').value || '—',
+    phone:   document.getElementById('ndPhone').value   || '—',
+    city:    document.getElementById('ndCity').value    || '—',
+    plan:    document.getElementById('ndPlan').value,
+    status: 'trial', leads:0, qrs:0, joined: new Date().toISOString().slice(0,10)
+  });
+  closeModal('newDealerModal');
+  filterDealers();
+  updateAdminStats();
+  toast(`Dealer "${name}" created! ID: ${id}`);
+}
+
+// ── All leads ─────────────────────────────────────────────────────────────────
+function renderAllLeads() {
+  document.getElementById('allLeadsBody').innerHTML = allLeads.map(l=>`
+    <tr>
+      <td><div class="cell-name">${esc(l.name)}</div></td>
+      <td style="font-size:11px;color:var(--muted)">${esc(l.dealer)}</td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#F5C518">${esc(l.prize)}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${esc(l.stock)}</td>
+      <td><span class="status-pill"><span class="dot dot-${l.status.toLowerCase()}"></span>${l.status}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${fmtDate(l.date)}</td>
+    </tr>
+  `).join('');
+}
+
+function exportAllLeads() {
+  const h=['Customer','Dealership','Prize','Vehicle','Status','Date'];
+  const rows=allLeads.map(l=>[l.name,l.dealer,l.prize,l.stock,l.status,l.date]);
+  const csv=[h,...rows].map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='all-leads.csv'; a.click();
+}
+
+function exportDealers() {
+  const h=['ID','Name','Email','Plan','Status','Leads','Joined'];
+  const rows=dealers.map(d=>[d.id,d.name,d.email,d.plan,d.status,d.leads,d.joined]);
+  const csv=[h,...rows].map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='dealers.csv'; a.click();
+}
+
+// ── Revenue ───────────────────────────────────────────────────────────────────
+function renderRevenue() {
+  const mrr = dealers.filter(d=>d.status==='active').reduce((s,d)=>s+PLAN_PRICES[d.plan],0);
+  document.getElementById('revMRR').textContent    = '$'+mrr.toLocaleString();
+  document.getElementById('revARR').textContent    = '$'+(mrr*12).toLocaleString();
+  document.getElementById('revAvg').textContent    = dealers.filter(d=>d.status==='active').length
+    ? '$'+Math.round(mrr/dealers.filter(d=>d.status==='active').length) : '—';
+  document.getElementById('revLTV').textContent    = '$'+(mrr*48/Math.max(dealers.length,1)).toFixed(0);
+
+  // Monthly bars (demo data)
+  const months=[{m:'Oct',v:297},{m:'Nov',v:396},{m:'Dec',v:495},{m:'Jan',v:693},{m:'Feb',v:891},{m:'Mar',v:mrr}];
+  const max=Math.max(...months.map(x=>x.v));
+  document.getElementById('revChart').innerHTML=months.map(x=>`
+    <div class="mb-wrap">
+      <div class="mb-val">$${x.v}</div>
+      <div class="mb-bar" style="height:${Math.max(4,Math.round((x.v/max)*60))}px"></div>
+    </div>
+  `).join('');
+  document.getElementById('revChartLabels').innerHTML=months.map(x=>`
+    <div style="flex:1;text-align:center;font-size:8px;color:var(--muted)">${x.m}</div>
+  `).join('');
+
+  // Plan dist
+  const planCounts={starter:0,pro:0,agency:0};
+  dealers.filter(d=>d.status==='active').forEach(d=>planCounts[d.plan]++);
+  const pt=dealers.filter(d=>d.status==='active').length||1;
+  document.getElementById('planDist').innerHTML=Object.entries(planCounts).map(([p,c])=>`
+    <div class="pd-row">
+      <div class="pd-label" style="color:${p==='starter'?'#60A5FA':p==='pro'?'#F5C518':'#22C55E'}">${p}</div>
+      <div class="pd-bar"><div class="pd-fill" style="width:${Math.round(c/pt*100)}%;background:${p==='starter'?'#60A5FA':p==='pro'?'#F5C518':'#22C55E'}"></div></div>
+      <div class="pd-count">${c}</div>
+    </div>
+  `).join('');
+}
+
+// ── Default prize editor ──────────────────────────────────────────────────────
+function renderDefaultPrizeEditor() {
+  document.getElementById('defaultPrizeEditor').innerHTML =
+    renderPrizeEditorHTML(defaultPrizes, 'def') +
+    `<div class="odds-total" id="defOddsTotal"></div>`;
+  updatePrizeOdds('def', defaultPrizes.length);
+}
+
+function saveDefaultPrizes() {
+  defaultPrizes = defaultPrizes.map((_,i)=>({
+    ...defaultPrizes[i],
+    amount: parseInt(document.getElementById(`defAmt${i}`)?.value)||defaultPrizes[i].amount,
+    weight: parseInt(document.getElementById(`defWt${i}`)?.value)||defaultPrizes[i].weight,
+  }));
+  toast('Default prizes saved! New dealers will use these settings.');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r?`${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}`:'255,255,255';
+}
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+
+function toast(msg, type='ok', dur=3000) {
+  // Simple toast — reuse same pattern
+  const el = document.createElement('div');
+  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(${type==='err'?'248,113,113':'74,222,128'},.3);color:${type==='err'?'#F87171':'#4ADE80'};padding:11px 22px;border-radius:8px;font-size:12px;z-index:9999;white-space:nowrap;font-family:'DM Sans',sans-serif;`;
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),dur);
+}
+</script>
+</body>
+</html>

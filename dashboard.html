@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spin & Win — Dealer Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--red:#D0021B;--gold:#F5C518;--dark:#0C0C0C;--mid:#161616;--card:#1A1A1A;--border:rgba(255,255,255,.08);--text:#F0EDE6;--muted:#666;--green:#22C55E;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+.layout{display:flex;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{width:215px;background:var(--mid);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;flex-shrink:0;}
+.sb-logo{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2px;color:var(--gold);padding:0 18px 22px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+.sb-logo span{color:var(--muted);font-size:10px;display:block;letter-spacing:1px;margin-top:2px;}
+.nav{display:flex;align-items:center;gap:9px;padding:10px 18px;font-size:13px;color:var(--muted);cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.nav:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.nav.active{color:var(--gold);border-left-color:var(--gold);background:rgba(245,197,24,.05);}
+.nav-icon{font-size:15px;}
+.notif{background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;margin-left:auto;}
+.sb-foot{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
+.sb-foot strong{color:var(--text);display:block;margin-bottom:2px;}
+
+/* Main */
+.main{flex:1;padding:28px 32px;overflow-y:auto;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;}
+.pt{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.8px;}
+.ps{font-size:12px;color:var(--muted);margin-top:2px;}
+.btn{background:var(--red);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.btn:hover{background:#B50018;}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-o:hover{background:rgba(255,255,255,.05);}
+.btn-gold{background:var(--gold);color:#0a0a0a;}
+.btn-gold:hover{background:#E8B000;}
+.btns{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.sl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;}
+.sd{font-size:11px;margin-top:5px;}
+.sd.pos{color:var(--green);}
+.sd.neg{color:var(--red);}
+.sd.neu{color:var(--muted);}
+
+/* Filters */
+.filters{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.fi{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;}
+.fi:focus{border-color:rgba(245,197,24,.4);}
+.fi-search{width:220px;}
+
+/* Table */
+.tw{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);}
+th{text-align:left;padding:11px 14px;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s;cursor:pointer;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,.025);}
+td{padding:12px 14px;font-size:12px;vertical-align:middle;}
+.name{font-weight:500;font-size:13px;}
+.sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.pp{display:inline-block;border-radius:3px;padding:3px 9px;font-size:10px;font-weight:600;}
+.p100{background:rgba(74,222,128,.1);color:#4ADE80;}
+.p200{background:rgba(96,165,250,.1);color:#60A5FA;}
+.p500{background:rgba(248,113,113,.1);color:#F87171;}
+.p1000{background:rgba(245,197,24,.1);color:#F5C518;}
+
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.d-new{background:var(--green);}
+.d-contacted{background:var(--gold);}
+.d-closed{background:var(--muted);}
+
+.ab{background:transparent;border:1px solid var(--border);border-radius:3px;padding:4px 9px;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.ab:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
+
+.empty{text-align:center;padding:50px;color:var(--muted);font-size:13px;}
+.loading-row{text-align:center;padding:40px;color:var(--muted);}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
+
+/* Modal */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.mo.open{display:flex;}
+.md{background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:26px;width:460px;max-width:100%;animation:fadeUp .22s ease both;}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.mt2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.8px;}
+.mc{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;}
+.mc:hover{color:var(--text);}
+.dr{display:flex;gap:12px;margin-bottom:12px;}
+.dl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);width:100px;flex-shrink:0;padding-top:2px;}
+.dv{font-size:13px;}
+hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
+.ma{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+
+/* Analytics */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.ct{font-size:12px;font-weight:600;margin-bottom:14px;}
+.br{display:flex;flex-direction:column;gap:9px;}
+.brw{display:flex;align-items:center;gap:8px;}
+.brl{font-size:10px;color:var(--muted);width:65px;text-align:right;flex-shrink:0;}
+.brt{flex:1;height:7px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;}
+.brf{height:100%;border-radius:4px;transition:width 1s ease;}
+.brv{font-size:10px;color:var(--muted);width:28px;}
+
+/* QR Grid */
+.qg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.qc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px;}
+.qi{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--gold);}
+.qv{font-size:11px;color:var(--muted);margin-top:1px;}
+.qs{font-size:10px;color:var(--muted);margin-top:6px;}
+.qs strong{color:var(--text);}
+.qr-img{width:80px;height:80px;border-radius:6px;border:1px solid var(--border);object-fit:cover;background:#111;}
+.qr-ph{width:80px;height:80px;border-radius:6px;border:1px dashed rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:26px;background:rgba(255,255,255,.02);}
+
+/* New QR modal */
+.form-row{margin-bottom:14px;}
+.form-row label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:5px;}
+.form-row input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
+.form-row input:focus{border-color:rgba(245,197,24,.4);}
+
+/* Settings */
+.set-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;max-width:500px;margin-bottom:14px;}
+.set-ttl{font-size:13px;font-weight:600;margin-bottom:6px;}
+.set-sub{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.range-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.range-lbl{font-size:11px;width:70px;text-align:right;flex-shrink:0;}
+.range-val{font-size:11px;color:var(--muted);width:28px;}
+input[type=range]{flex:1;cursor:pointer;}
+input[type=number].ni{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;width:80px;}
+input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;flex:1;}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;border:1px solid rgba(34,197,94,.3);color:#4ADE80;padding:11px 20px;border-radius:8px;font-size:12px;z-index:999;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.err{border-color:rgba(248,113,113,.3);color:#F87171;}
+
+/* Weekly chart */
+.week-chart{display:flex;align-items:flex-end;gap:8px;height:70px;}
+.wc-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.wc-val{font-size:9px;color:var(--muted);}
+.wc-fill{width:100%;background:rgba(245,197,24,.75);border-radius:3px 3px 0 0;min-height:4px;}
+.wc-label{font-size:9px;color:var(--muted);margin-top:4px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Tab content */
+.tab-c{display:none;}
+.tab-c.active{display:block;animation:fadeUp .3s ease both;}
+
+@media(max-width:1000px){.stats{grid-template-columns:1fr 1fr;}.cg{grid-template-columns:1fr;}}
+@media(max-width:768px){.sidebar{display:none;}.main{padding:16px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sb-logo">⚡ SPIN &amp; WIN<span>DEALER PORTAL</span></div>
+  <div class="nav active" onclick="switchTab('leads')"><span class="nav-icon">📋</span>Leads<span class="notif" id="newBadge">0</span></div>
+  <div class="nav" onclick="switchTab('analytics')"><span class="nav-icon">📊</span>Analytics</div>
+  <div class="nav" onclick="switchTab('qrcodes')"><span class="nav-icon">🔳</span>QR Codes</div>
+  <div class="nav" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span>Settings</div>
+  <div class="sb-foot"><strong id="sbDealerName">Loading…</strong><span id="sbDealerEmail"></span></div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- LEADS -->
+  <div id="tab-leads" class="tab-c active">
+    <div class="ph">
+      <div><div class="pt">Lead Inbox</div><div class="ps">Real-time leads from your QR stickers</div></div>
+      <div class="btns">
+        <button class="btn btn-o" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn" onclick="loadLeads()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="sc"><div class="sl">Total Leads</div><div class="sv" id="stTotal">—</div><div class="sd pos" id="stToday">— today</div></div>
+      <div class="sc"><div class="sl">New / Untouched</div><div class="sv" id="stNew">—</div><div class="sd neg">needs follow-up</div></div>
+      <div class="sc"><div class="sl">$1,000 Winners</div><div class="sv" id="stJackpot">—</div><div class="sd neu">5% chance</div></div>
+      <div class="sc"><div class="sl">Avg Prize Value</div><div class="sv" id="stAvg">—</div><div class="sd neu">per lead</div></div>
+    </div>
+    <div class="filters">
+      <input class="fi fi-search" type="text" placeholder="🔍  Name, email, phone…" id="searchInput" oninput="filterTable()"/>
+      <select class="fi" id="prizeFilter" onchange="filterTable()">
+        <option value="">All Prizes</option>
+        <option value="$100">$100 Off</option>
+        <option value="$200">$200 Off</option>
+        <option value="$500">$500 Off</option>
+        <option value="$1,000">$1,000 Off</option>
+      </select>
+      <select class="fi" id="statusFilter" onchange="filterTable()">
+        <option value="">All Status</option>
+        <option value="New">New</option>
+        <option value="Contacted">Contacted</option>
+        <option value="Closed">Closed</option>
+      </select>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Phone</th><th>Vehicle / Stock</th>
+          <th>Prize</th><th>Date</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="leadsBody"><tr><td colspan="7"><div class="loading-row"><div class="spinner"></div></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="tab-analytics" class="tab-c">
+    <div class="ph"><div><div class="pt">Analytics</div><div class="ps">Prize distribution &amp; activity</div></div></div>
+    <div class="cg">
+      <div class="cc">
+        <div class="ct">Prize Distribution (Actual)</div>
+        <div class="br" id="prizeDistChart">
+          <div class="brw"><div class="brl" style="color:#4ADE80">$100 Off</div><div class="brt"><div class="brf" style="width:50%;background:#4ADE80"></div></div><div class="brv">50%</div></div>
+          <div class="brw"><div class="brl" style="color:#60A5FA">$200 Off</div><div class="brt"><div class="brf" style="width:30%;background:#60A5FA"></div></div><div class="brv">30%</div></div>
+          <div class="brw"><div class="brl" style="color:#F87171">$500 Off</div><div class="brt"><div class="brf" style="width:15%;background:#F87171"></div></div><div class="brv">15%</div></div>
+          <div class="brw"><div class="brl" style="color:#F5C518">$1,000 Off</div><div class="brt"><div class="brf" style="width:5%;background:#F5C518"></div></div><div class="brv">5%</div></div>
+        </div>
+      </div>
+      <div class="cc">
+        <div class="ct">Lead Status</div>
+        <div id="statusChartWrap" style="text-align:center">
+          <canvas id="statusChart" width="140" height="140" style="border-radius:50%;"></canvas>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;display:flex;gap:12px;justify-content:center;" id="statusLegend"></div>
+        </div>
+      </div>
+    </div>
+    <div class="cc">
+      <div class="ct">Scans — Last 7 Days</div>
+      <div class="week-chart" id="weekChart"></div>
+      <div style="display:flex;gap:8px;margin-top:6px;" id="weekLabels"></div>
+    </div>
+  </div>
+
+  <!-- QR CODES -->
+  <div id="tab-qrcodes" class="tab-c">
+    <div class="ph">
+      <div><div class="pt">QR Codes</div><div class="ps">Manage your lot stickers</div></div>
+      <button class="btn btn-gold" onclick="openNewQRModal()">+ New QR Code</button>
+    </div>
+    <div class="qg" id="qrGrid"><div class="loading-row"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" class="tab-c">
+    <div class="ph"><div><div class="pt">Settings</div><div class="ps">Configure your Spin &amp; Win</div></div></div>
+
+    <div class="set-card">
+      <div class="set-ttl">Lead Notification Email</div>
+      <div class="set-sub">Instant email alert to this address when a new lead comes in.</div>
+      <div style="display:flex;gap:8px;">
+        <input type="email" class="ei" id="notifyEmail" placeholder="sales@yourdealership.com"/>
+        <button class="btn" onclick="saveEmail()">Save</button>
+      </div>
+    </div>
+
+    <div class="set-card">
+      <div class="set-ttl">Prize Weights</div>
+      <div class="set-sub">Higher value = more frequently awarded. Adjusting these changes live odds.</div>
+      <div class="range-row"><div class="range-lbl" style="color:#4ADE80">$100 Off</div><input type="range" id="rw100" min="0" max="100" value="50" oninput="updateRangeVal('rw100','rv100')"/><div class="range-val" id="rv100">50</div></div>
+      <div class="range-row"><div class="range-lbl" style="color:#60A5FA">$200 Off</div><input type="range" id="rw200" min="0" max="100" value="30" oninput="updateRangeVal('rw200','rv200')"/><div class="range-val" id="rv200">30</div></div>
+      <div class="range-row"><div class="range-lbl" style="color:#F87171">$500 Off</div><input type="range" id="rw500" min="0" max="100" value="15" oninput="updateRangeVal('rw500','rv500')"/><div class="range-val" id="rv500">15</div></div>
+      <div class="range-row"><div class="range-lbl" style="color:#F5C518">$1,000 Off</div><input type="range" id="rw1000" min="0" max="100" value="5" oninput="updateRangeVal('rw1000','rv1000')"/><div class="range-val" id="rv1000">5</div></div>
+      <button class="btn" style="margin-top:8px" onclick="saveWeights()">Save Weights</button>
+    </div>
+
+    <div class="set-card">
+      <div class="set-ttl">Cooldown &amp; Offer Expiry</div>
+      <div class="set-sub">How long before a device can scan again, and how long offers stay valid.</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <input type="number" class="ni" id="setCooldown" value="30" min="1" max="365"/>
+        <span style="font-size:12px;color:var(--muted);">day cooldown between spins</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <input type="number" class="ni" id="setOfferHours" value="72" min="1" max="720"/>
+        <span style="font-size:12px;color:var(--muted);">hours offer stays valid</span>
+      </div>
+      <button class="btn" onclick="saveConfig()">Save Settings</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- Lead Detail Modal -->
+<div class="mo" id="leadModal">
+  <div class="md">
+    <div class="mh">
+      <div class="mt2" id="modalName">—</div>
+      <button class="mc" onclick="closeModal('leadModal')">✕</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="ma">
+      <button class="btn" onclick="markStatus('Contacted')">✓ Mark Contacted</button>
+      <button class="btn" onclick="markStatus('Closed')">✓ Mark Closed</button>
+      <button class="btn btn-o" id="callBtn">📞 Call</button>
+      <button class="btn btn-o" id="emailBtn">✉ Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- New QR Modal -->
+<div class="mo" id="newQRModal">
+  <div class="md">
+    <div class="mh">
+      <div class="mt2">New QR Code</div>
+      <button class="mc" onclick="closeModal('newQRModal')">✕</button>
+    </div>
+    <div class="form-row"><label>Label / Location</label><input type="text" id="qrLabel" placeholder="e.g. Lot Row B — SUVs"/></div>
+    <div class="form-row"><label>Vehicle (optional)</label><input type="text" id="qrVehicle" placeholder="e.g. 2024 Ford F-150 Stock A12345"/></div>
+    <div id="qrResult" style="display:none;text-align:center;margin:16px 0;">
+      <img id="qrImage" style="width:180px;height:180px;border-radius:8px;border:1px solid var(--border);"/>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;" id="qrUrl"></div>
+    </div>
+    <div class="ma">
+      <button class="btn btn-gold" id="genQRBtn" onclick="generateQR()">Generate QR Code</button>
+      <button class="btn btn-o" id="downloadQRBtn" style="display:none" onclick="downloadQR()">⬇ Download</button>
+      <button class="btn btn-o" onclick="closeModal('newQRModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+const API = '';  // same origin; set to 'https://yourserver.com' if separate
+const DEALER_ID = new URLSearchParams(location.search).get('dealer') || 'DEALER-DEMO';
+
+let allLeads = [];
+let currentLead = null;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadLeads();
+  loadStats();
+  loadQRCodes();
+});
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+let currentTab = 'leads';
+function switchTab(name) {
+  document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.tab-c').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+  currentTab = name;
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'qrcodes') loadQRCodes();
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, type='ok', dur=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type==='err'?' err':'') + ' show';
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ─── API helpers ──────────────────────────────────────────────────────────────
+async function apiFetch(path, opts={}) {
+  const res = await fetch(`${API}${path}`, { headers:{'Content-Type':'application/json'}, ...opts });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ─── Leads ────────────────────────────────────────────────────────────────────
+async function loadLeads() {
+  try {
+    allLeads = await apiFetch(`/api/dashboard/${DEALER_ID}/leads`);
+    filterTable();
+    updateNewBadge();
+  } catch(e) {
+    // Demo fallback
+    allLeads = getDemoLeads();
+    filterTable();
+    updateNewBadge();
+  }
+  try {
+    const stats = await apiFetch(`/api/dashboard/${DEALER_ID}/stats`);
+    updateStats(stats);
+  } catch(e) {
+    updateStats(getDemoStats());
+  }
+}
+
+async function loadStats() {
+  try {
+    const stats = await apiFetch(`/api/dashboard/${DEALER_ID}/stats`);
+    updateStats(stats);
+    document.getElementById('sbDealerName').textContent = 'Premier Auto Group';
+  } catch(e) {
+    updateStats(getDemoStats());
+    document.getElementById('sbDealerName').textContent = 'Premier Auto Group';
+    document.getElementById('sbDealerEmail').textContent = 'sales@premierauto.com';
+  }
+}
+
+function updateStats(s) {
+  document.getElementById('stTotal').textContent = s.total || 0;
+  document.getElementById('stToday').textContent = `${s.todayLeads||0} today`;
+  document.getElementById('stNew').textContent = s.newLeads || 0;
+  document.getElementById('stJackpot').textContent = s.jackpots || 0;
+  const avg = s.prizeBreakdown && s.prizeBreakdown.length
+    ? Math.round(s.prizeBreakdown.reduce((sum,p)=>{
+        const v = parseInt((p.prize||'').replace(/[^0-9]/g,''))||0;
+        return sum + v * (p.count||0);
+      }, 0) / s.total)
+    : 0;
+  document.getElementById('stAvg').textContent = avg ? `$${avg}` : '—';
+}
+
+function updateNewBadge() {
+  const n = allLeads.filter(l => l.status === 'New').length;
+  document.getElementById('newBadge').textContent = n;
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const pf = document.getElementById('prizeFilter').value;
+  const sf = document.getElementById('statusFilter').value;
+
+  const filtered = allLeads.filter(l =>
+    (!q || l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.phone.includes(q)) &&
+    (!pf || l.prize.startsWith(pf)) &&
+    (!sf || l.status === sf)
+  );
+
+  const tbody = document.getElementById('leadsBody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty">No leads match your filters.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(l => `
+    <tr onclick="openLeadModal('${l.id}')">
+      <td><div class="name">${esc(l.name)}</div><div class="sub">${esc(l.email)}</div></td>
+      <td>${esc(l.phone)}</td>
+      <td style="font-size:11px;color:var(--muted)">${esc(l.stock)||'—'}</td>
+      <td><span class="pp ${prizeClass(l.prize)}">${esc(l.prize)} OFF</span></td>
+      <td style="font-size:11px;color:var(--muted)">${fmtDate(l.created_at)}</td>
+      <td><span class="dot d-${l.status.toLowerCase()}"></span>${l.status}</td>
+      <td><button class="ab" onclick="event.stopPropagation();openLeadModal('${l.id}')">View →</button></td>
+    </tr>
+  `).join('');
+}
+
+function prizeClass(p) {
+  if (p.includes('1,000')||p.includes('1000')) return 'p1000';
+  if (p.includes('500')) return 'p500';
+  if (p.includes('200')) return 'p200';
+  return 'p100';
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Lead modal ───────────────────────────────────────────────────────────────
+function openLeadModal(id) {
+  currentLead = allLeads.find(l => l.id === id);
+  if (!currentLead) return;
+  document.getElementById('modalName').textContent = currentLead.name;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="dr"><div class="dl">Email</div><div class="dv"><a href="mailto:${esc(currentLead.email)}" style="color:var(--gold);text-decoration:none">${esc(currentLead.email)}</a></div></div>
+    <div class="dr"><div class="dl">Phone</div><div class="dv">${esc(currentLead.phone)}</div></div>
+    <div class="dr"><div class="dl">Vehicle</div><div class="dv">${esc(currentLead.stock)||'Not provided'}</div></div>
+    <hr class="div"/>
+    <div class="dr"><div class="dl">Prize Won</div><div class="dv"><span class="pp ${prizeClass(currentLead.prize)}">${esc(currentLead.prize)} OFF</span></div></div>
+    <div class="dr"><div class="dl">Promo Code</div><div class="dv" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold)">${esc(currentLead.code)}</div></div>
+    <div class="dr"><div class="dl">Expires</div><div class="dv" style="color:var(--muted);font-size:12px">${fmtDate(currentLead.expires_at)}</div></div>
+    <div class="dr"><div class="dl">QR Source</div><div class="dv" style="color:var(--muted);font-size:12px">${esc(currentLead.qr_id)}</div></div>
+    <div class="dr"><div class="dl">Submitted</div><div class="dv" style="color:var(--muted);font-size:12px">${fmtDate(currentLead.created_at)}</div></div>
+    <div class="dr"><div class="dl">Status</div><div class="dv"><span class="dot d-${currentLead.status.toLowerCase()}"></span>${currentLead.status}</div></div>
+  `;
+  document.getElementById('callBtn').onclick = () => { window.location.href = `tel:${currentLead.phone.replace(/\D/g,'')}`; };
+  document.getElementById('emailBtn').onclick = () => { window.location.href = `mailto:${currentLead.email}?subject=About Your Spin %26 Win Prize`; };
+  document.getElementById('leadModal').classList.add('open');
+}
+
+async function markStatus(status) {
+  if (!currentLead) return;
+  try {
+    await apiFetch(`/api/dashboard/leads/${currentLead.id}/status`, {
+      method:'PATCH', body:JSON.stringify({status})
+    });
+  } catch(e) {}
+  currentLead.status = status;
+  const lead = allLeads.find(l => l.id === currentLead.id);
+  if (lead) lead.status = status;
+  filterTable(); updateNewBadge();
+  closeModal('leadModal');
+  toast(`Lead marked as ${status}`);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─── Export CSV ───────────────────────────────────────────────────────────────
+function exportCSV() {
+  const h = ['Name','Email','Phone','Vehicle/Stock','Prize','Code','Date','Status','QR Source'];
+  const rows = allLeads.map(l => [l.name,l.email,l.phone,l.stock,l.prize,l.code,l.created_at,l.status,l.qr_id]);
+  const csv = [h,...rows].map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `spinwin-leads-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('CSV downloaded!');
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+function renderAnalytics() {
+  if (!allLeads.length) return;
+  // Prize distribution
+  const totals = {'$100':0,'$200':0,'$500':0,'$1,000':0};
+  allLeads.forEach(l => {
+    const k = Object.keys(totals).find(k => l.prize.includes(k));
+    if (k) totals[k]++;
+  });
+  const t = allLeads.length || 1;
+  const bars = [
+    {lbl:'$100 Off',  color:'#4ADE80', count:totals['$100']},
+    {lbl:'$200 Off',  color:'#60A5FA', count:totals['$200']},
+    {lbl:'$500 Off',  color:'#F87171', count:totals['$500']},
+    {lbl:'$1,000 Off',color:'#F5C518', count:totals['$1,000']},
+  ];
+  document.getElementById('prizeDistChart').innerHTML = bars.map(b => {
+    const pct = Math.round((b.count/t)*100);
+    return `<div class="brw"><div class="brl" style="color:${b.color}">${b.lbl}</div><div class="brt"><div class="brf" style="width:${pct}%;background:${b.color}"></div></div><div class="brv">${pct}%</div></div>`;
+  }).join('');
+
+  // Status donut
+  const statuses = {New:0,Contacted:0,Closed:0};
+  allLeads.forEach(l => { if (statuses[l.status]!==undefined) statuses[l.status]++; });
+  drawDonut(statuses, t);
+
+  // Weekly chart
+  renderWeekChart();
+}
+
+function drawDonut(statuses, total) {
+  const canvas = document.getElementById('statusChart');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,140,140);
+  const colors = {New:'#22C55E',Contacted:'#F5C518',Closed:'#555'};
+  let start = -Math.PI/2;
+  Object.entries(statuses).forEach(([k,v]) => {
+    if (!v) return;
+    const angle = (v/total)*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(70,70);
+    ctx.arc(70,70,60,start,start+angle);
+    ctx.closePath(); ctx.fillStyle=colors[k]; ctx.fill();
+    start+=angle;
+  });
+  // Hole
+  ctx.beginPath(); ctx.arc(70,70,40,0,2*Math.PI);
+  ctx.fillStyle='var(--card)'; ctx.fill();
+  // Center text
+  ctx.fillStyle=total?'#fff':'#555';
+  ctx.font='bold 20px Bebas Neue';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(total,70,68);
+  ctx.fillStyle='#555'; ctx.font='9px DM Sans';
+  ctx.fillText('TOTAL',70,82);
+
+  document.getElementById('statusLegend').innerHTML =
+    Object.entries(statuses).map(([k,v]) =>
+      `<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:${colors[k]};display:inline-block"></span><span style="font-size:10px;color:var(--muted)">${k}: ${v}</span></span>`
+    ).join('');
+}
+
+function renderWeekChart() {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const counts = {};
+  const now = new Date();
+  for (let i=6;i>=0;i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate()-i);
+    const key = d.toISOString().slice(0,10);
+    counts[key] = 0;
+  }
+  allLeads.forEach(l => {
+    const key = (l.created_at||'').slice(0,10);
+    if (key in counts) counts[key]++;
+  });
+  const entries = Object.entries(counts);
+  const max = Math.max(...entries.map(e=>e[1]),1);
+
+  document.getElementById('weekChart').innerHTML = entries.map(([d,c]) =>
+    `<div class="wc-bar"><div class="wc-val">${c||''}</div><div class="wc-fill" style="height:${Math.max(4,Math.round((c/max)*60))}px"></div></div>`
+  ).join('');
+  document.getElementById('weekLabels').innerHTML = entries.map(([d]) =>
+    `<div style="flex:1;text-align:center;font-size:9px;color:var(--muted)">${days[new Date(d+'T12:00').getDay()]}</div>`
+  ).join('');
+}
+
+// ─── QR Codes ─────────────────────────────────────────────────────────────────
+async function loadQRCodes() {
+  const grid = document.getElementById('qrGrid');
+  try {
+    const codes = await apiFetch(`/api/dashboard/${DEALER_ID}/qrcodes`);
+    renderQRGrid(codes);
+  } catch(e) {
+    renderQRGrid(getDemoQRCodes());
+  }
+}
+
+function renderQRGrid(codes) {
+  document.getElementById('qrGrid').innerHTML = codes.map(q => `
+    <div class="qc">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div class="qr-ph">🔳</div>
+        <div>
+          <div class="qi">${esc(q.id)}</div>
+          <div class="qv">${esc(q.label||'')}</div>
+          <div class="qs"><strong>${q.scans||0}</strong> scans</div>
+          <div style="margin-top:7px">
+            <span style="font-size:9px;padding:3px 7px;border-radius:3px;${q.active?'background:rgba(34,197,94,.1);color:#22C55E':'background:rgba(255,255,255,.04);color:#555'}">
+              ${q.active?'● Active':'○ Paused'}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:7px">
+        <button class="ab" style="flex:1" onclick="printStickerFor('${esc(q.id)}','${esc(q.label||q.id)}')">⬇ Sticker PDF</button>
+        <button class="ab">Edit</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openNewQRModal() {
+  document.getElementById('qrLabel').value='';
+  document.getElementById('qrVehicle').value='';
+  document.getElementById('qrResult').style.display='none';
+  document.getElementById('downloadQRBtn').style.display='none';
+  document.getElementById('newQRModal').classList.add('open');
+}
+
+async function generateQR() {
+  const label   = document.getElementById('qrLabel').value.trim();
+  const vehicle = document.getElementById('qrVehicle').value.trim();
+  const btn     = document.getElementById('genQRBtn');
+  btn.disabled=true; btn.textContent='Generating…';
+  try {
+    const data = await apiFetch(`/api/dashboard/${DEALER_ID}/qrcodes`,{
+      method:'POST', body:JSON.stringify({label,vehicle})
+    });
+    document.getElementById('qrImage').src = data.qrDataUrl;
+    document.getElementById('qrUrl').textContent = data.url;
+    document.getElementById('qrResult').style.display='block';
+    document.getElementById('downloadQRBtn').style.display='inline-block';
+    window._lastQRData = data;
+    loadQRCodes();
+    toast('QR code created!');
+  } catch(e) {
+    toast('Error generating QR code. Is the server running?','err');
+  } finally { btn.disabled=false; btn.textContent='Generate QR Code'; }
+}
+
+function downloadQR() {
+  const d = window._lastQRData;
+  if (!d) return;
+  const a = document.createElement('a');
+  a.href = d.qrDataUrl;
+  a.download = `spinwin-${d.id}.png`;
+  a.click();
+}
+
+async function printStickerFor(qrId, label) {
+  // In production: call /api/sticker/:qrId to get a printable PDF
+  toast(`Opening sticker for ${qrId}…`);
+  // Fallback: open sticker page in new tab
+  window.open(`/sticker.html?qr=${qrId}&dealer=${DEALER_ID}&label=${encodeURIComponent(label)}`, '_blank');
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function updateRangeVal(rangeId, valId) {
+  document.getElementById(valId).textContent = document.getElementById(rangeId).value;
+}
+
+async function saveWeights() {
+  const body = {
+    w100:  +document.getElementById('rw100').value,
+    w200:  +document.getElementById('rw200').value,
+    w500:  +document.getElementById('rw500').value,
+    w1000: +document.getElementById('rw1000').value,
+    cooldown_days: +document.getElementById('setCooldown').value,
+    offer_hours:   +document.getElementById('setOfferHours').value,
+  };
+  try {
+    await apiFetch(`/api/dashboard/${DEALER_ID}/config`,{method:'PATCH',body:JSON.stringify(body)});
+    toast('Settings saved!');
+  } catch(e) { toast('Settings saved (demo mode)!'); }
+}
+
+async function saveEmail() {
+  const email = document.getElementById('notifyEmail').value.trim();
+  if (!email) return toast('Please enter an email','err');
+  try {
+    await apiFetch(`/api/dashboard/${DEALER_ID}/config`,{method:'PATCH',body:JSON.stringify({email})});
+    toast('Notification email saved!');
+  } catch(e) { toast('Saved (demo mode)!'); }
+}
+
+async function saveConfig() {
+  await saveWeights();
+}
+
+// ─── Demo data fallbacks ──────────────────────────────────────────────────────
+function getDemoLeads() {
+  return [
+    {id:'1',name:'Marcus Webb',    email:'marcus.webb@gmail.com', phone:'(602) 555-0142',stock:'A10234 — 2024 Ford F-150',    prize:'$1,000',code:'AXDF-9KW2',status:'New',      qr_id:'QR-LOT-001',created_at:'2026-03-09',expires_at:'2026-03-12'},
+    {id:'2',name:'Sandra Flores',  email:'sflores@yahoo.com',      phone:'(480) 555-0291',stock:'B20891 — 2023 Chevy Tahoe',  prize:'$100',  code:'BMNP-4LQ8',status:'New',      qr_id:'QR-LOT-004',created_at:'2026-03-09',expires_at:'2026-03-12'},
+    {id:'3',name:'Tyler Brooks',   email:'tbrooks42@outlook.com',  phone:'(623) 555-0374',stock:'C30012 — 2025 Toyota RAV4', prize:'$200',  code:'CKRT-7VZ3',status:'New',      qr_id:'QR-LOT-002',created_at:'2026-03-09',expires_at:'2026-03-12'},
+    {id:'4',name:'Diana Nguyen',   email:'diana.nguyen@gmail.com', phone:'(602) 555-0551',stock:'A10501 — 2024 Honda CR-V',  prize:'$500',  code:'DQPX-2YA5',status:'Contacted',qr_id:'QR-LOT-001',created_at:'2026-03-08',expires_at:'2026-03-11'},
+    {id:'5',name:'James Ortega',   email:'jortega@hotmail.com',    phone:'(480) 555-0623',stock:'',                           prize:'$100',  code:'EFGH-3JK6',status:'Contacted',qr_id:'QR-LOT-003',created_at:'2026-03-08',expires_at:'2026-03-11'},
+    {id:'6',name:'Kendra Mills',   email:'kmills@gmail.com',       phone:'(623) 555-0712',stock:'D40320 — 2023 BMW X5',      prize:'$200',  code:'FWXY-8MN1',status:'Closed',   qr_id:'QR-LOT-005',created_at:'2026-03-07',expires_at:'2026-03-10'},
+    {id:'7',name:'Robert Chang',   email:'rchang@email.com',       phone:'(602) 555-0883',stock:'B20044 — 2024 Jeep Grand Cherokee',prize:'$100',code:'GTUV-5PQ7',status:'Closed',qr_id:'QR-LOT-002',created_at:'2026-03-06',expires_at:'2026-03-09'},
+  ];
+}
+function getDemoStats() {
+  return {total:7,newLeads:3,jackpots:1,todayLeads:3,prizeBreakdown:[{prize:'$100',count:3},{prize:'$200',count:2},{prize:'$500',count:1},{prize:'$1,000',count:1}],weeklyScans:[]};
+}
+function getDemoQRCodes() {
+  return [
+    {id:'QR-LOT-001',label:'Lot Row A — Mixed Inventory',scans:18,active:1},
+    {id:'QR-LOT-002',label:'Lot Row B — SUVs',scans:12,active:1},
+    {id:'QR-LOT-003',label:'Lot Row C — Trucks',scans:9,active:1},
+    {id:'QR-LOT-004',label:'Showroom Floor',scans:5,active:1},
+    {id:'QR-LOT-005',label:'Service Drive',scans:2,active:0},
+  ];
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); }));
+</script>
+</body>
+</html>
