@@ -372,23 +372,23 @@ function drawWheel(rotation) {
   const canvas = document.getElementById('prizeWheel');
   const ctx = canvas.getContext('2d');
   const cx=150, cy=150, r=148;
-  const weights = getWeights();
-  const total = weights.reduce((a,b)=>a+b,0);
   ctx.clearRect(0,0,300,300);
+
+  // All slices EQUAL size visually — weighted odds stay hidden
+  const equalSlice = (2*Math.PI) / SLICES.length;
 
   let start = rotation;
   SLICES.forEach((s,i) => {
-    const slice = (weights[i]/total)*2*Math.PI;
     ctx.beginPath(); ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,start,start+slice); ctx.closePath();
+    ctx.arc(cx,cy,r,start,start+equalSlice); ctx.closePath();
     ctx.fillStyle=s.color; ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1.5; ctx.stroke();
 
-    ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+slice/2);
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(start+equalSlice/2);
     ctx.textAlign='right'; ctx.fillStyle=s.textColor;
     ctx.font='bold 13px "DM Sans",sans-serif';
     ctx.fillText(s.label, r-12, 5); ctx.restore();
-    start+=slice;
+    start+=equalSlice;
   });
 
   ctx.beginPath(); ctx.arc(cx,cy,20,0,2*Math.PI);
@@ -408,12 +408,9 @@ function spinWheel() {
   const prizeIndex = WEIGHTS_ORDER.indexOf(result.prize.split(' ')[0] === '$1,000' ? '$1,000' : result.prize);
   const safeIndex = prizeIndex < 0 ? 0 : prizeIndex;
 
-  const weights = getWeights();
-  const total = weights.reduce((a,b)=>a+b,0);
-  let angleSum = 0;
-  for (let i=0; i<safeIndex; i++) angleSum += (weights[i]/total)*2*Math.PI;
-  const sliceAngle = (weights[safeIndex]/total)*2*Math.PI;
-  const prizeCenter = angleSum + sliceAngle/2;
+  // Land on correct prize using equal visual slice positions
+  const equalSlice = (2*Math.PI) / SLICES.length;
+  const prizeCenter = (safeIndex * equalSlice) + equalSlice/2;
   const targetAngle = (-Math.PI/2) - prizeCenter;
   const finalAngle = (5+Math.floor(Math.random()*3))*2*Math.PI + targetAngle;
 
