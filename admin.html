@@ -876,9 +876,12 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 
 function toast(msg, type='ok', dur=3000) {
-  // Simple toast — reuse same pattern
   const el = document.createElement('div');
-  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(${type==='err'?'248,113,113':'74,222,128'},.3);color:${type==='err'?'#F87171':'#4ADE80'};padd
+  el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;padding:11px 22px;border-radius:8px;font-size:12px;z-index:9999;white-space:nowrap;font-family:DM Sans,sans-serif;color:' + (type==='err' ? '#F87171' : '#4ADE80') + ';border:1px solid rgba(' + (type==='err' ? '248,113,113' : '74,222,128') + ',.3)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
 
 // ── Attach login events (Cloudflare-safe) ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
