@@ -162,10 +162,8 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   <div class="login-box">
     <div class="login-logo">⚡ SPIN &amp; WIN</div>
     <div class="login-sub">Super Admin Portal</div>
-    <input class="login-input" type="email" id="loginEmail" placeholder="admin@spinwinleads.com"/>
-    <input class="login-input" type="password" id="loginPass" placeholder="Password" style="margin-bottom:16px"/>
+    <input class="login-input" type="password" id="loginPass" placeholder="Enter admin password" style="margin-bottom:16px"/>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
-    <div class="login-note">Demo: any email + password "admin"</div>
   </div>
 </div>
 
@@ -188,7 +186,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   <div class="nav" onclick="switchTab('leads',this)"><span class="nav-icon">📋</span>All Leads</div>
   <div class="nav" onclick="switchTab('prizes',this)"><span class="nav-icon">🎰</span>Prize Defaults</div>
   <div class="nav" onclick="switchTab('settings',this)"><span class="nav-icon">⚙️</span>Platform Settings</div>
-  <div class="sb-foot"><strong>Admin</strong>admin@spinwinleads.com</div>
+  <div class="sb-foot"><strong>Admin</strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ddbcb9b0b4b39daeadb4b3aab4b3b1b8bcb9aef3beb2b0">[email&#160;protected]</a></div>
 </div>
 
 <!-- MAIN -->
@@ -367,7 +365,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const API = '';
 const PLAN_PRICES = { starter:99, pro:199, agency:499 };
 
@@ -399,16 +397,44 @@ let defaultPrizes = [
 ];
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-function doLogin() {
+let adminToken = sessionStorage.getItem('adminToken') || '';
+
+async function doLogin() {
   const pass = document.getElementById('loginPass').value;
-  if (pass === 'admin') {
+  if (!pass) return;
+  const btn = document.querySelector('.login-btn');
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  try {
+    const res  = await fetch('/api/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Invalid password');
+    adminToken = data.token;
+    sessionStorage.setItem('adminToken', adminToken);
     document.getElementById('loginGate').style.display='none';
     init();
-  } else {
+  } catch(e) {
     document.getElementById('loginPass').style.borderColor='rgba(208,2,27,.5)';
-    setTimeout(()=>document.getElementById('loginPass').style.borderColor='',1500);
-  }
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').placeholder = 'Incorrect — try again';
+    setTimeout(()=>{
+      document.getElementById('loginPass').style.borderColor='';
+      document.getElementById('loginPass').placeholder='Enter admin password';
+    }, 2000);
+  } finally { btn.textContent='Sign In'; btn.disabled=false; }
 }
+
+// Check for existing session on load
+window.addEventListener('load', () => {
+  if (adminToken) {
+    fetch('/api/admin/stats', { headers:{'x-admin-token': adminToken} })
+      .then(r => { if(r.ok) { document.getElementById('loginGate').style.display='none'; init(); } })
+      .catch(() => {});
+  }
+});
+
 document.getElementById('loginPass').addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -735,11 +761,4 @@ document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(
 function toast(msg, type='ok', dur=3000) {
   // Simple toast — reuse same pattern
   const el = document.createElement('div');
-  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(${type==='err'?'248,113,113':'74,222,128'},.3);color:${type==='err'?'#F87171':'#4ADE80'};padding:11px 22px;border-radius:8px;font-size:12px;z-index:9999;white-space:nowrap;font-family:'DM Sans',sans-serif;`;
-  el.textContent=msg;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),dur);
-}
-</script>
-</body>
-</html>
+  el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(${type==='err'?'248,113,113':'74,222,128'},.3);color:${type==='err'?'#F87171':'#4ADE80'};padd
