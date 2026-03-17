@@ -497,9 +497,13 @@ async function loadDealersFromAPI() {
       // Map API fields to expected fields
       dealers = dealers.map(d => ({
         ...d,
-        leads: d.lead_count || 0,
-        qrs:   d.qr_count   || 0,
-        joined: d.created_at ? d.created_at.slice(0,10) : '—'
+        leads:  d.lead_count || 0,
+        qrs:    d.qr_count   || 0,
+        joined: d.created_at ? d.created_at.slice(0,10) : '—',
+        city:   d.city   || '—',
+        contact:d.contact|| '—',
+        plan:   d.plan   || 'basic',
+        status: d.status || 'trial'
       }));
     }
   } catch(e) { console.error('Failed to load dealers:', e); }
@@ -563,7 +567,7 @@ function filterDealers() {
     <tr onclick="openDealerModal('${d.id}')">
       <td><div class="cell-name">${esc(d.name)}</div><div class="cell-sub">${esc(d.city)}</div></td>
       <td><div style="font-size:12px">${esc(d.contact)}</div><div class="cell-sub">${esc(d.email)}</div></td>
-      <td><span class="plan-pill plan-${d.plan}">${d.plan}</span></td>
+      <td><span class="plan-pill" style="background:rgba(245,197,24,.1);color:#F5C518;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase">${d.plan}</span></td>
       <td style="font-family:'Bebas Neue',sans-serif;font-size:18px">${d.leads}</td>
       <td style="color:var(--muted);font-size:12px">${d.qrs}</td>
       <td><span class="status-pill"><span class="dot dot-${d.status}"></span>${d.status}</span></td>
