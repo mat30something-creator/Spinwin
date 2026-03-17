@@ -95,7 +95,7 @@ body { background:#e8e8e8; font-family:'DM Sans',sans-serif; }
 /* Header */
 .s-header {
   background:#1B4FBF;
-  padding:9px 16px;
+  padding:9px 60px 9px 16px;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -119,7 +119,7 @@ body { background:#e8e8e8; font-family:'DM Sans',sans-serif; }
 /* Body */
 .s-body {
   flex:1; background:#fff;
-  display:flex; position:relative; overflow:hidden; min-height:0;
+  display:flex; align-items:center; position:relative; overflow:hidden; min-height:0;
 }
 .s-body::before {
   content:'';
@@ -138,8 +138,8 @@ body { background:#e8e8e8; font-family:'DM Sans',sans-serif; }
 
 .b-qr {
   width:84px; height:84px;
-  margin:auto 0 auto 16px;
-  background:#f0f5ff;
+  margin:auto 0 auto 16px; align-self:center;
+  background:#ffffff;
   border:1.5px solid #c8d8f8;
   border-radius:6px;
   display:flex; align-items:center; justify-content:center;
@@ -150,8 +150,8 @@ body { background:#e8e8e8; font-family:'DM Sans',sans-serif; }
 .b-qr .qr-placeholder { font-size:10px; color:#aaa; text-align:center; padding:8px; line-height:1.4; }
 
 .b-content {
-  flex:1; padding:10px 12px 10px 10px;
-  display:flex; flex-direction:column; justify-content:center;
+  flex:1; padding:10px 14px 10px 10px;
+  display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
   position:relative; z-index:1; min-width:0;
 }
 .b-eyebrow {
@@ -160,9 +160,9 @@ body { background:#e8e8e8; font-family:'DM Sans',sans-serif; }
 }
 .b-headline { font-family:'Bebas Neue',sans-serif; line-height:1; color:#0A0A0A; margin-bottom:3px; }
 .b-headline .l1 { font-size:15px; letter-spacing:1px; display:block; }
-.b-headline .l2 { font-size:28px; color:#1B4FBF; display:block; letter-spacing:.5px; }
+.b-headline .l2 { font-size:27px; color:#1B4FBF; display:block; letter-spacing:.5px; }
 .b-headline .l3 { font-size:15px; letter-spacing:1px; display:block; }
-.b-sub { font-size:7.5px; color:#aaa; line-height:1.5; margin-bottom:8px; }
+.b-sub { font-size:7.5px; color:#aaa; line-height:1.6; margin-bottom:9px; }
 
 .prizes { display:flex; gap:3px; }
 .pc {
@@ -283,7 +283,7 @@ function updateStickers() {
           <div class="h-bolt"></div>
           <div class="h-logo">SPIN &amp; WIN</div>
         </div>
-        <div class="h-badge">Exclusive Vehicle Offer</div>
+        <div class="h-badge">Exclusive Offer</div>
       </div>
       <div class="s-body">
         <div class="b-qr" id="qr-${i}">
@@ -319,8 +319,8 @@ function updateStickers() {
       new QRCode(qrContainer, {
         text: `${BASE_URL}/?qr=${QR_ID}&dealer=${DEALER_ID}`,
         width: 84, height: 84,
-        colorDark: '#1B4FBF',
-        colorLight: '#f0f5ff',
+        colorDark: '#000000',
+        colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.H
       });
     } catch(e) {
