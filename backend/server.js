@@ -317,9 +317,20 @@ app.post('/api/leads', rateLimit(30, 60000), async (req,res) => {
 });
 
 // ─── DEALER DASHBOARD APIs (now protected by requireDealer) ───────────────────
-app.get('/api/dashboard/:d/leads', requireDealer, async (req,res) => {
+app.get('/api/dashboard/:d/leads', async (req,res) => {
+  // Allow admin token as bypass
+  const adminToken = req.headers['x-admin-token'];
+  if (adminToken) {
+    const session = await dbGet('SELECT token FROM admin_sessions WHERE token=?',[adminToken]).catch(()=>null);
+    if (session) {
+      try { return res.json(await dbAll('SELECT * FROM leads WHERE dealer_id=? ORDER BY created_at DESC',[req.params.d])); }
+      catch(e){ return res.status(500).json({error:e.message}); }
+    }
+  }
+  return requireDealer(req, res, async () => {
   try { res.json(await dbAll('SELECT * FROM leads WHERE dealer_id=? ORDER BY created_at DESC',[req.params.d])); }
   catch(e){res.status(500).json({error:e.message});}
+  });
 });
 app.patch('/api/dashboard/leads/:id/status', async (req,res) => {
   try {
@@ -463,6 +474,17 @@ app.post('/api/stripe/setup-products', requireAdmin, async (req,res) => {
 });
 
 // Admin APIs
+app.get('/api/admin/leads', requireAdmin, async (req,res) => {
+  try {
+    const leads = await dbAll(`
+      SELECT l.*, d.name as dealer_name
+      FROM leads l JOIN dealers d ON d.id = l.dealer_id
+      ORDER BY l.created_at DESC LIMIT 200
+    `);
+    res.json(leads);
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
 app.get('/api/admin/stats', requireAdmin, async (req,res) => {
   try {
     const [total,active,trial,leads,todayLeads,plans] = await Promise.all([

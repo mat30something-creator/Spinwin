@@ -482,11 +482,45 @@ function doLogin_unused() {
 // keyup listener moved to isolated script above
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-function init() {
+async function init() {
+  renderDefaultPrizeEditor();
+  await loadDealersFromAPI();
+  await loadAllLeadsFromAPI();
+}
+
+async function loadDealersFromAPI() {
+  try {
+    const token = window._adminToken || sessionStorage.getItem('adminToken');
+    const res = await fetch('/api/admin/dealers', { headers: {'x-admin-token': token} });
+    if (res.ok) {
+      dealers = await res.json();
+      // Map API fields to expected fields
+      dealers = dealers.map(d => ({
+        ...d,
+        leads: d.lead_count || 0,
+        qrs:   d.qr_count   || 0,
+        joined: d.created_at ? d.created_at.slice(0,10) : '—'
+      }));
+    }
+  } catch(e) { console.error('Failed to load dealers:', e); }
   filterDealers();
   updateAdminStats();
+}
+
+async function loadAllLeadsFromAPI() {
+  try {
+    const token = window._adminToken || sessionStorage.getItem('adminToken');
+    const res = await fetch('/api/admin/leads', { headers: {'x-admin-token': token} });
+    if (res.ok) {
+      const data = await res.json();
+      allLeads = data.map(l => ({
+        ...l,
+        dealer: l.dealer_name || '—',
+        date: l.created_at ? l.created_at.slice(0,10) : '—'
+      }));
+    }
+  } catch(e) { console.error('Failed to load leads:', e); }
   renderAllLeads();
-  renderDefaultPrizeEditor();
 }
 
 // ── Tab switch ────────────────────────────────────────────────────────────────
