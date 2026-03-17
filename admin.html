@@ -383,7 +383,7 @@ async function doLogin() {
     sessionStorage.setItem('adminToken', data.token);
     window._adminToken = data.token;
     document.getElementById('loginGate').style.display = 'none';
-    if (typeof init === 'function') init();
+    setTimeout(() => { if (typeof init === 'function') init(); }, 100);
   } catch(e) {
     const errDiv = document.getElementById('loginErr');
     errDiv.textContent = e.message || 'Could not connect — try again';
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const token = sessionStorage.getItem('adminToken');
   if (token) {
     fetch('/api/admin/stats', { headers: {'x-admin-token': token} })
-      .then(r => { if(r.ok) { document.getElementById('loginGate').style.display='none'; window._adminToken=token; if(typeof init==='function') init(); }})
+      .then(r => { if(r.ok) { document.getElementById('loginGate').style.display='none'; window._adminToken=token; setTimeout(() => { if(typeof init==='function') init(); }, 100); }})
       .catch(()=>{});
   }
 });
