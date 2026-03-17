@@ -360,7 +360,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <div id="newDealerPrizes"></div>
     </div>
     <div class="ma">
-      <button class="btn btn-gold" onclick="createDealerFromAdmin()">Create Dealer</button>
+      <button class="btn btn-gold" id="createDealerBtn" onclick="createDealerFromAdmin()">Create Dealer</button>
       <button class="btn btn-o" onclick="closeModal('newDealerModal')">Cancel</button>
     </div>
   </div>
@@ -381,8 +381,8 @@ async function doLogin() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Invalid password');
-    window._adminToken = data.token;
     sessionStorage.setItem('adminToken', data.token);
+    window._adminToken = data.token;
     document.getElementById('loginGate').style.display = 'none';
     if (typeof init === 'function') init();
   } catch(e) {
@@ -590,6 +590,7 @@ function openDealerModal(id) {
   document.getElementById('dealerModalActions').innerHTML = `
     <button class="btn btn-gold" onclick="saveDealerChanges('${id}')">Save Changes</button>
     <button class="btn btn-green" onclick="impersonate('${id}','${esc(d.name)}');closeModal('dealerModal')">View Dashboard →</button>
+    <button class="btn btn-o" onclick="resetDealerPin('${id}','${esc(d.name)}')">🔑 Reset PIN</button>
     <button class="btn btn-o" onclick="closeModal('dealerModal')">Cancel</button>
     <button class="btn ab red" style="margin-left:auto" onclick="suspendDealer('${id}')">Suspend</button>
   `;
@@ -682,30 +683,57 @@ function renderNewDealerPrizes() {
   updatePrizeOdds('nd', 4);
 }
 
-function createDealerFromAdmin() {
+async function createDealerFromAdmin() {
   const name  = document.getElementById('ndName').value.trim();
   const email = document.getElementById('ndEmail').value.trim();
   if (!name || !email) return toast('Name and email required','err');
 
-  const id = 'DEALER-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  const btn = document.getElementById('createDealerBtn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+
   const prizes = defaultPrizes.map((_,i)=>({
     amount: parseInt(document.getElementById(`ndAmt${i}`)?.value)||defaultPrizes[i].amount,
     weight: parseInt(document.getElementById(`ndWt${i}`)?.value)||defaultPrizes[i].weight,
-    color:  defaultPrizes[i].color
   }));
 
-  dealers.unshift({
-    id, name, email, prizes,
-    contact: document.getElementById('ndContact').value || '—',
-    phone:   document.getElementById('ndPhone').value   || '—',
-    city:    document.getElementById('ndCity').value    || '—',
+  const payload = {
+    name, email, prizes,
+    contact: document.getElementById('ndContact').value || '',
+    phone:   document.getElementById('ndPhone').value   || '',
+    city:    document.getElementById('ndCity').value    || '',
     plan:    document.getElementById('ndPlan').value,
-    status: 'trial', leads:0, qrs:0, joined: new Date().toISOString().slice(0,10)
-  });
-  closeModal('newDealerModal');
-  filterDealers();
-  updateAdminStats();
-  toast(`Dealer "${name}" created! ID: ${id}`);
+  };
+
+  try {
+    const res = await fetch('/api/admin/dealers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken') },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create dealer');
+
+    closeModal('newDealerModal');
+    // Show PIN in a prominent alert
+    setTimeout(() => {
+      alert(`✅ Dealer "${name}" created!
+
+Dealer ID: ${data.dealerId}
+Dashboard PIN: ${data.pin}
+
+⚠️ Save this PIN — send it to the dealer. They need it to log into their dashboard.
+
+A welcome email with the PIN has also been sent to ${email}`);
+    }, 200);
+    // Reload dealers list from server
+    try {
+      const dr = await fetch('/api/admin/dealers', { headers: {'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken')} });
+      if (dr.ok) { dealers = await dr.json(); filterDealers(); updateAdminStats(); }
+    } catch(e) {}
+    toast(`Dealer "${name}" created!`);
+  } catch(e) {
+    toast(e.message, 'err');
+  } finally { btn.disabled = false; btn.textContent = 'Create Dealer'; }
 }
 
 // ── All leads ─────────────────────────────────────────────────────────────────
@@ -729,6 +757,26 @@ function exportAllLeads() {
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='all-leads.csv'; a.click();
+}
+
+async function resetDealerPin(id, name) {
+  if (!confirm(`Reset the dashboard PIN for ${name}? A new PIN will be generated.`)) return;
+  try {
+    const res = await fetch(`/api/admin/dealers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken') },
+      body: JSON.stringify({ resetPin: true })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    closeModal('dealerModal');
+    alert(`✅ New PIN for ${name}:
+
+${data.newPin}
+
+Send this to the dealer — their old PIN no longer works.`);
+    toast('PIN reset successfully!');
+  } catch(e) { toast(e.message, 'err'); }
 }
 
 function exportDealers() {

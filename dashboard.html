@@ -158,6 +158,20 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
 </style>
 </head>
 <body>
+
+<!-- PIN LOGIN GATE -->
+<div id="pinGate">
+  <div class="pin-box">
+    <div class="pin-logo">⚡ SPIN &amp; WIN</div>
+    <div class="pin-sub">Dealer Dashboard</div>
+    <div class="pin-dealer" id="pinDealerName">Loading...</div>
+    <input class="pin-input" type="password" id="pinInput" placeholder="••••••" maxlength="6" autocomplete="off"/>
+    <button class="pin-btn" id="pinBtn" onclick="doPin()">Sign In</button>
+    <div class="pin-err" id="pinErr"></div>
+    <div class="pin-note">Enter the 6-digit PIN from your welcome email.<br/>Contact support if you need help.</div>
+  </div>
+</div>
+
 <div class="layout">
 
 <!-- Sidebar -->
@@ -336,18 +350,81 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
 
 <script>
 // ─── Config ───────────────────────────────────────────────────────────────────
-const API = '';  // same origin; set to 'https://yourserver.com' if separate
+const API = '';
 const DEALER_ID = new URLSearchParams(location.search).get('dealer') || 'DEALER-DEMO';
 
 let allLeads = [];
 let currentLead = null;
+let dealerToken = sessionStorage.getItem('dealerToken_' + DEALER_ID) || '';
+
+// ─── PIN Login ────────────────────────────────────────────────────────────────
+async function doPin() {
+  const pin = document.getElementById('pinInput').value.trim();
+  if (!pin) return;
+  const btn = document.getElementById('pinBtn');
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/dealer/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dealerId: DEALER_ID, pin })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Invalid PIN');
+    dealerToken = data.token;
+    sessionStorage.setItem('dealerToken_' + DEALER_ID, dealerToken);
+    document.getElementById('sbDealerName').textContent = data.dealerName || 'Your Dealership';
+    document.getElementById('pinGate').style.display = 'none';
+    init();
+  } catch(e) {
+    const err = document.getElementById('pinErr');
+    err.textContent = e.message || 'Incorrect PIN — try again';
+    err.style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').style.borderColor = 'rgba(208,2,27,.6)';
+    setTimeout(() => {
+      err.style.display = 'none';
+      document.getElementById('pinInput').style.borderColor = '';
+    }, 3000);
+  } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
+  // Load dealer name for login screen
+  try {
+    const r = await fetch('/api/dashboard/' + DEALER_ID + '/branding');
+    if (r.ok) {
+      const d = await r.json();
+      document.getElementById('pinDealerName').textContent = d.name || 'Your Dealership';
+    }
+  } catch(e) {}
+
+  document.getElementById('pinInput').addEventListener('keyup', e => { if(e.key==='Enter') doPin(); });
+
+  // Auto-login if valid session exists
+  if (dealerToken) {
+    try {
+      const r = await fetch('/api/dashboard/' + DEALER_ID + '/stats', {
+        headers: { 'x-dealer-token': dealerToken }
+      });
+      if (r.ok) {
+        document.getElementById('pinGate').style.display = 'none';
+        init();
+        return;
+      }
+    } catch(e) {}
+    // Token invalid — clear it
+    sessionStorage.removeItem('dealerToken_' + DEALER_ID);
+    dealerToken = '';
+  }
+});
+
+function init() {
   loadLeads();
   loadStats();
   loadQRCodes();
-});
+}
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
 let currentTab = 'leads';
@@ -371,7 +448,17 @@ function toast(msg, type='ok', dur=3000) {
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 async function apiFetch(path, opts={}) {
-  const res = await fetch(`${API}${path}`, { headers:{'Content-Type':'application/json'}, ...opts });
+  const headers = { 'Content-Type': 'application/json' };
+  if (dealerToken) headers['x-dealer-token'] = dealerToken;
+  const res = await fetch(`${API}${path}`, { headers, ...opts });
+  if (res.status === 401) {
+    // Session expired — show PIN gate again
+    sessionStorage.removeItem('dealerToken_' + DEALER_ID);
+    dealerToken = '';
+    document.getElementById('pinGate').style.display = 'flex';
+    document.getElementById('pinInput').value = '';
+    throw new Error('Session expired — please sign in again');
+  }
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

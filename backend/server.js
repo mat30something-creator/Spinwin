@@ -1,6 +1,6 @@
 /**
  * SPIN & WIN — Backend Server
- * Node.js + Express + sqlite3 + Nodemailer + Stripe
+ * Fixes: dealer PIN auth, rate limiting, persistent DB path
  */
 
 require('dotenv').config();
@@ -25,29 +25,59 @@ const STRIPE_PRICES = {
   pro:   process.env.STRIPE_PRICE_PRO   || '',
 };
 
-// Stripe webhook needs raw body BEFORE express.json()
+// ─── Rate Limiting (Fix #3) ───────────────────────────────────────────────────
+const rateLimitMap = new Map();
+function rateLimit(maxRequests, windowMs) {
+  return (req, res, next) => {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+    const key = `${ip}:${req.path}`;
+    const now = Date.now();
+    const record = rateLimitMap.get(key) || { count: 0, resetAt: now + windowMs };
+    if (now > record.resetAt) { record.count = 0; record.resetAt = now + windowMs; }
+    record.count++;
+    rateLimitMap.set(key, record);
+    if (record.count > maxRequests) {
+      return res.status(429).json({ error: 'Too many requests. Please slow down.' });
+    }
+    next();
+  };
+}
+// Clean up rate limit map every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap.entries()) {
+    if (now > val.resetAt) rateLimitMap.delete(key);
+  }
+}, 10 * 60 * 1000);
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
-// ─── Database ─────────────────────────────────────────────────────────────────
-const db = new sqlite3.Database(process.env.DB_PATH || './spinwin.db');
+// ─── Database (Fix #2 — use /data path for persistent disk on Render) ─────────
+// On Render paid tier: set DB_PATH=/data/spinwin.db and add a persistent disk at /data
+const DB_PATH = process.env.DB_PATH || './spinwin.db';
+const db = new sqlite3.Database(DB_PATH, (err) => {
+  if (err) console.error('[DB Error]', err.message);
+  else console.log('[DB] Connected to', DB_PATH);
+});
 
-// Promisify db methods for cleaner async/await usage
 const dbRun = (sql, params=[]) => new Promise((res,rej) => db.run(sql, params, function(err){ err ? rej(err) : res(this); }));
 const dbGet = (sql, params=[]) => new Promise((res,rej) => db.get(sql, params, (err,row) => err ? rej(err) : res(row)));
 const dbAll = (sql, params=[]) => new Promise((res,rej) => db.all(sql, params, (err,rows) => err ? rej(err) : res(rows)));
 
-// Create tables
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS dealers (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL,
     phone TEXT, contact TEXT, city TEXT, plan TEXT DEFAULT 'basic',
     status TEXT DEFAULT 'trial', stripe_customer TEXT, stripe_sub TEXT,
     brand_color TEXT DEFAULT '#D0021B', brand_logo TEXT DEFAULT '',
+    dashboard_pin TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now')), active INTEGER DEFAULT 1
   )`);
+  db.run(`ALTER TABLE dealers ADD COLUMN dashboard_pin TEXT DEFAULT ''`, [], () => {});
   db.run(`CREATE TABLE IF NOT EXISTS qr_codes (
     id TEXT PRIMARY KEY, dealer_id TEXT NOT NULL, label TEXT, vehicle TEXT,
     scans INTEGER DEFAULT 0, active INTEGER DEFAULT 1,
@@ -77,16 +107,22 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS admin_sessions (
     token TEXT PRIMARY KEY, created_at TEXT DEFAULT (datetime('now'))
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS dealer_sessions (
+    token TEXT PRIMARY KEY, dealer_id TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
 
   // Seed demo dealer
   db.get('SELECT id FROM dealers WHERE id=?', ['DEALER-DEMO'], (err, row) => {
     if (!row) {
-      db.run(`INSERT INTO dealers (id,name,email,phone,plan,status) VALUES (?,?,?,?,?,?)`,
-        ['DEALER-DEMO','Premier Auto Group', process.env.DEMO_SALES_EMAIL||'sales@example.com','(602) 555-0100','pro','active']);
+      const pin = generatePin();
+      db.run(`INSERT INTO dealers (id,name,email,phone,plan,status,dashboard_pin) VALUES (?,?,?,?,?,?,?)`,
+        ['DEALER-DEMO','Premier Auto Group',process.env.DEMO_SALES_EMAIL||'sales@example.com','(602) 555-0100','pro','active', hashPin(pin)]);
       db.run(`INSERT INTO prize_config (dealer_id) VALUES (?)`, ['DEALER-DEMO']);
       [['QR-LOT-001','Lot Row A'],['QR-LOT-002','Lot Row B — SUVs'],['QR-LOT-003','Lot Row C — Trucks']].forEach(([qid,label]) => {
         db.run(`INSERT OR IGNORE INTO qr_codes (id,dealer_id,label) VALUES (?,?,?)`, [qid,'DEALER-DEMO',label]);
       });
+      console.log(`[DEMO] Dashboard PIN: ${pin}`);
     }
   });
 });
@@ -125,8 +161,35 @@ async function sendLeadEmail(dealer, lead, config) {
   });
 }
 
+async function sendWelcomeEmail(dealer, pin, firstQrId) {
+  if (!process.env.SMTP_USER) return;
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  await transporter.sendMail({
+    from: `"Spin & Win" <${process.env.SMTP_USER}>`,
+    to: dealer.email,
+    subject: `⚡ Welcome to Spin & Win — ${dealer.name}`,
+    html: `<div style="font-family:sans-serif;max-width:560px;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;">
+      <h2 style="color:#F5C518">⚡ Welcome to Spin & Win!</h2>
+      <p style="color:#888;margin-bottom:20px">Hi ${dealer.contact||dealer.name}, your account is ready.</p>
+      <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:20px;margin-bottom:16px;">
+        <p style="margin:6px 0;font-size:13px">🏢 <strong>${dealer.name}</strong></p>
+        <p style="margin:6px 0;font-size:13px">🔑 Dashboard PIN: <strong style="color:#F5C518;font-size:18px;letter-spacing:3px">${pin}</strong></p>
+        <p style="margin:6px 0;font-size:11px;color:#555">Keep this PIN safe — you'll need it to access your dashboard</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <a href="${baseUrl}/dashboard.html?dealer=${dealer.id}" style="display:block;background:#D0021B;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center">📊 Open My Dashboard →</a>
+        <a href="${baseUrl}/?qr=${firstQrId}&dealer=${dealer.id}" style="display:block;background:#1a1a1a;color:#F5C518;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;border:1px solid rgba(245,197,24,.3)">🎰 Preview Spin Page →</a>
+        <a href="${baseUrl}/sticker.html?qr=${firstQrId}&dealer=${dealer.id}&name=${encodeURIComponent(dealer.name)}" style="display:block;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.1)">🔳 Print Stickers →</a>
+      </div>
+      <p style="font-size:11px;color:#555">Dealer ID: ${dealer.id}<br/>Plan: ${dealer.plan}</p>
+    </div>`
+  });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function hashString(str) { return crypto.createHash('sha256').update(str).digest('hex').slice(0,32); }
+function hashPin(pin) { return crypto.createHash('sha256').update(pin + 'spinwin_salt').digest('hex'); }
+function generatePin() { return Math.floor(100000 + Math.random() * 900000).toString(); }
 function generateCode() {
   const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code='';
   for(let i=0;i<8;i++){if(i===4)code+='-';code+=c[Math.floor(Math.random()*c.length)];}
@@ -146,6 +209,7 @@ function rollPrize(config) {
 }
 function addHours(h){const d=new Date();d.setHours(d.getHours()+h);return d.toISOString().replace('T',' ').slice(0,19);}
 
+// ─── Auth Middleware ──────────────────────────────────────────────────────────
 function requireAdmin(req,res,next){
   const token=req.headers['x-admin-token']||req.query.adminToken;
   if(!token) return res.status(401).json({error:'Unauthorized'});
@@ -154,10 +218,28 @@ function requireAdmin(req,res,next){
     .catch(()=>res.status(500).json({error:'Server error'}));
 }
 
+function requireDealer(req,res,next){
+  const token=req.headers['x-dealer-token'];
+  const dealerId=req.params.d || req.params.dealerId;
+  if(!token) return res.status(401).json({error:'Dashboard login required'});
+  dbGet('SELECT * FROM dealer_sessions WHERE token=? AND dealer_id=?',[token, dealerId])
+    .then(row => {
+      if(!row) return res.status(401).json({error:'Invalid or expired session'});
+      // Expire sessions older than 7 days
+      const age = Date.now() - new Date(row.created_at).getTime();
+      if(age > 7*24*60*60*1000) {
+        dbRun('DELETE FROM dealer_sessions WHERE token=?',[token]);
+        return res.status(401).json({error:'Session expired'});
+      }
+      next();
+    })
+    .catch(()=>res.status(500).json({error:'Server error'}));
+}
+
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 
 // Admin login
-app.post('/api/admin/login', async (req,res) => {
+app.post('/api/admin/login', rateLimit(10, 60000), async (req,res) => {
   try {
     const {password}=req.body;
     if(!password) return res.status(400).json({error:'Password required'});
@@ -170,8 +252,24 @@ app.post('/api/admin/login', async (req,res) => {
   } catch(e){res.status(500).json({error:e.message});}
 });
 
-// QR config
-app.get('/api/qr/:qrId/config', async (req,res) => {
+// ─── DEALER DASHBOARD LOGIN (Fix #1) ─────────────────────────────────────────
+app.post('/api/dealer/login', rateLimit(10, 60000), async (req,res) => {
+  try {
+    const {dealerId, pin} = req.body;
+    if(!dealerId||!pin) return res.status(400).json({error:'Dealer ID and PIN required'});
+    const dealer = await dbGet('SELECT * FROM dealers WHERE id=? AND active=1',[dealerId]);
+    if(!dealer) return res.status(404).json({error:'Dealer not found'});
+    const pinHash = hashPin(pin);
+    if(dealer.dashboard_pin !== pinHash) return res.status(401).json({error:'Incorrect PIN'});
+    const token = crypto.randomBytes(32).toString('hex');
+    await dbRun('INSERT INTO dealer_sessions (token, dealer_id) VALUES (?,?)',[token, dealerId]);
+    await dbRun("DELETE FROM dealer_sessions WHERE created_at < datetime('now','-7 days')");
+    res.json({token, dealerName: dealer.name, plan: dealer.plan});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
+// QR config (public — no auth needed, customers scan this)
+app.get('/api/qr/:qrId/config', rateLimit(60, 60000), async (req,res) => {
   try {
     const qr = await dbGet(`SELECT q.*,d.name as dealer_name,d.id as dealer_id,
       d.brand_color,d.brand_logo,d.plan,p.w100,p.w200,p.w500,p.w1000,
@@ -191,8 +289,8 @@ app.get('/api/qr/:qrId/config', async (req,res) => {
   } catch(e){res.status(500).json({error:e.message});}
 });
 
-// Submit lead
-app.post('/api/leads', async (req,res) => {
+// Submit lead (rate limited)
+app.post('/api/leads', rateLimit(30, 60000), async (req,res) => {
   try {
     const {qrId,dealerId,name,email,phone,stock,deviceFingerprint}=req.body;
     if(!qrId||!dealerId||!name||!email||!phone) return res.status(400).json({error:'Missing fields'});
@@ -218,8 +316,8 @@ app.post('/api/leads', async (req,res) => {
   } catch(e){res.status(500).json({error:e.message});}
 });
 
-// Dashboard APIs
-app.get('/api/dashboard/:d/leads', async (req,res) => {
+// ─── DEALER DASHBOARD APIs (now protected by requireDealer) ───────────────────
+app.get('/api/dashboard/:d/leads', requireDealer, async (req,res) => {
   try { res.json(await dbAll('SELECT * FROM leads WHERE dealer_id=? ORDER BY created_at DESC',[req.params.d])); }
   catch(e){res.status(500).json({error:e.message});}
 });
@@ -231,11 +329,11 @@ app.patch('/api/dashboard/leads/:id/status', async (req,res) => {
     res.json({success:true});
   } catch(e){res.status(500).json({error:e.message});}
 });
-app.get('/api/dashboard/:d/qrcodes', async (req,res) => {
+app.get('/api/dashboard/:d/qrcodes', requireDealer, async (req,res) => {
   try { res.json(await dbAll('SELECT * FROM qr_codes WHERE dealer_id=? ORDER BY created_at DESC',[req.params.d])); }
   catch(e){res.status(500).json({error:e.message});}
 });
-app.post('/api/dashboard/:d/qrcodes', async (req,res) => {
+app.post('/api/dashboard/:d/qrcodes', requireDealer, async (req,res) => {
   try {
     const {label,vehicle}=req.body; const dealerId=req.params.d;
     const id='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -245,7 +343,7 @@ app.post('/api/dashboard/:d/qrcodes', async (req,res) => {
     res.json({id,url,qrDataUrl});
   } catch(e){res.status(500).json({error:e.message});}
 });
-app.get('/api/dashboard/:d/stats', async (req,res) => {
+app.get('/api/dashboard/:d/stats', requireDealer, async (req,res) => {
   try {
     const d=req.params.d;
     const [total,newLeads,jackpots,todayLeads,prizeBreakdown,weeklyScans] = await Promise.all([
@@ -259,7 +357,7 @@ app.get('/api/dashboard/:d/stats', async (req,res) => {
     res.json({total:total.c,newLeads:newLeads.c,jackpots:jackpots.c,todayLeads:todayLeads.c,prizeBreakdown,weeklyScans});
   } catch(e){res.status(500).json({error:e.message});}
 });
-app.patch('/api/dashboard/:d/config', async (req,res) => {
+app.patch('/api/dashboard/:d/config', requireDealer, async (req,res) => {
   try {
     const {w100,w200,w500,w1000,amt1,amt2,amt3,amt4,cooldown_days,offer_hours,email,notify_emails,brand_color,brand_logo}=req.body;
     await dbRun(`UPDATE prize_config SET w100=?,w200=?,w500=?,w1000=?,amt1=?,amt2=?,amt3=?,amt4=?,cooldown_days=?,offer_hours=?,notify_emails=? WHERE dealer_id=?`,
@@ -279,39 +377,29 @@ app.get('/api/dashboard/:d/branding', async (req,res) => {
 });
 
 // Dealer signup
-app.post('/api/dealers/signup', async (req,res) => {
+app.post('/api/dealers/signup', rateLimit(5, 60000), async (req,res) => {
   try {
     const {name,contact,email,phone,city,plan,prizes}=req.body;
     if(!name||!email) return res.status(400).json({error:'Name and email required'});
     const dealerId='DEALER-'+crypto.randomBytes(4).toString('hex').toUpperCase();
     const firstQrId='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
-    await dbRun(`INSERT INTO dealers (id,name,email,phone,plan,contact,city,status) VALUES (?,?,?,?,?,?,?,?)`,
-      [dealerId,name,email,phone||'',plan||'basic',contact||'',city||'','trial']);
+    const pin = generatePin();
+    const pinHash = hashPin(pin);
+    await dbRun(`INSERT INTO dealers (id,name,email,phone,plan,contact,city,status,dashboard_pin) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [dealerId,name,email,phone||'',plan||'basic',contact||'',city||'','trial',pinHash]);
     const w=Array.isArray(prizes)&&prizes.length>=4?prizes:null;
     await dbRun(`INSERT INTO prize_config (dealer_id,w100,w200,w500,w1000,amt1,amt2,amt3,amt4) VALUES (?,?,?,?,?,?,?,?,?)`,
       [dealerId,w?w[0].weight:50,w?w[1].weight:30,w?w[2].weight:15,w?w[3].weight:5,
                w?w[0].amount:100,w?w[1].amount:200,w?w[2].amount:500,w?w[3].amount:1000]);
     await dbRun(`INSERT INTO qr_codes (id,dealer_id,label) VALUES (?,?,?)`,[firstQrId,dealerId,'Main Lot']);
-    const baseUrl=process.env.BASE_URL||`http://localhost:${PORT}`;
-    if(process.env.SMTP_USER){
+    const dealer = {id:dealerId,name,email,contact:contact||name,plan:plan||'basic'};
+    sendWelcomeEmail(dealer, pin, firstQrId).catch(e=>console.error('[Welcome Email]',e.message));
+    if(process.env.ADMIN_EMAIL && process.env.SMTP_USER){
       transporter.sendMail({
-        from:`"Spin & Win" <${process.env.SMTP_USER}>`,to:email,
-        subject:`⚡ Welcome to Spin & Win — ${name}`,
-        html:`<div style="font-family:sans-serif;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;max-width:560px">
-          <h2 style="color:#F5C518">⚡ Welcome to Spin & Win!</h2>
-          <p style="color:#888">Hi ${contact||name}, your account is ready.</p>
-          <p>Dealer ID: <strong style="color:#F5C518">${dealerId}</strong></p>
-          <a href="${baseUrl}/dashboard.html?dealer=${dealerId}" style="display:inline-block;background:#D0021B;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;margin-top:12px">Open My Dashboard →</a>
-          <p style="font-size:11px;color:#555;margin-top:16px">Spin page: ${baseUrl}/?qr=${firstQrId}&dealer=${dealerId}</p>
-        </div>`
-      }).catch(e=>console.error('[Welcome Email]',e.message));
-      if(process.env.ADMIN_EMAIL){
-        transporter.sendMail({
-          from:`"Spin & Win" <${process.env.SMTP_USER}>`,to:process.env.ADMIN_EMAIL,
-          subject:`🆕 New signup: ${name} (${plan||'basic'})`,
-          html:`<p><strong>${name}</strong><br/>${email}<br/>Plan: ${plan}<br/>ID: ${dealerId}</p>`
-        }).catch(()=>{});
-      }
+        from:`"Spin & Win" <${process.env.SMTP_USER}>`,to:process.env.ADMIN_EMAIL,
+        subject:`🆕 New signup: ${name} (${plan||'basic'})`,
+        html:`<p><strong>${name}</strong><br/>${email}<br/>Plan: ${plan}<br/>ID: ${dealerId}</p>`
+      }).catch(()=>{});
     }
     res.json({success:true,dealerId,firstQrId});
   } catch(e){res.status(500).json({error:e.message});}
@@ -324,7 +412,7 @@ app.post('/api/stripe/checkout', async (req,res) => {
     const dealer=await dbGet('SELECT * FROM dealers WHERE id=?',[dealerId]);
     if(!dealer) return res.status(404).json({error:'Dealer not found'});
     const priceId=STRIPE_PRICES[plan];
-    if(!priceId) return res.status(400).json({error:'Stripe not configured. Run setup-products first.'});
+    if(!priceId) return res.status(400).json({error:'Stripe not configured. Contact support.'});
     const baseUrl=process.env.BASE_URL||`http://localhost:${PORT}`;
     let customerId=dealer.stripe_customer;
     if(!customerId){
@@ -363,18 +451,14 @@ async function handleStripeWebhook(req,res){
   res.json({received:true});
 }
 
-// Stripe setup (run once to create products)
+// Stripe setup
 app.post('/api/stripe/setup-products', requireAdmin, async (req,res) => {
   try{
     const basic=await stripe.products.create({name:'Spin & Win — Basic',description:'Unlimited leads, full dashboard, custom prizes'});
     const basicPrice=await stripe.prices.create({product:basic.id,unit_amount:19900,currency:'usd',recurring:{interval:'month'}});
     const pro=await stripe.products.create({name:'Spin & Win — Pro',description:'Everything in Basic + custom branding, SMS alerts, multiple emails'});
     const proPrice=await stripe.prices.create({product:pro.id,unit_amount:39900,currency:'usd',recurring:{interval:'month'}});
-    res.json({
-      message:'Products created! Add these to your Render environment variables:',
-      STRIPE_PRICE_BASIC:basicPrice.id,
-      STRIPE_PRICE_PRO:proPrice.id
-    });
+    res.json({message:'Add to Render env vars:',STRIPE_PRICE_BASIC:basicPrice.id,STRIPE_PRICE_PRO:proPrice.id});
   } catch(e){res.status(500).json({error:e.message});}
 });
 
@@ -407,32 +491,41 @@ app.post('/api/admin/dealers', requireAdmin, async (req,res) => {
     if(!name||!email) return res.status(400).json({error:'Name and email required'});
     const dealerId='DEALER-'+crypto.randomBytes(4).toString('hex').toUpperCase();
     const firstQrId='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
-    await dbRun(`INSERT INTO dealers (id,name,email,phone,plan,contact,city,status) VALUES (?,?,?,?,?,?,?,?)`,
-      [dealerId,name,email,phone||'',plan||'basic',contact||'',city||'','trial']);
+    const pin = generatePin();
+    const pinHash = hashPin(pin);
+    await dbRun(`INSERT INTO dealers (id,name,email,phone,plan,contact,city,status,dashboard_pin) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [dealerId,name,email,phone||'',plan||'basic',contact||'',city||'','trial',pinHash]);
     await dbRun(`INSERT INTO prize_config (dealer_id) VALUES (?)`,[dealerId]);
     await dbRun(`INSERT INTO qr_codes (id,dealer_id,label) VALUES (?,?,?)`,[firstQrId,dealerId,'Main Lot']);
-    res.json({success:true,dealerId,firstQrId});
+    res.json({success:true,dealerId,firstQrId,pin});
   } catch(e){res.status(500).json({error:e.message});}
 });
 app.patch('/api/admin/dealers/:id', requireAdmin, async (req,res) => {
   try {
-    const {plan,status,email,prizes}=req.body; const id=req.params.id;
+    const {plan,status,email,prizes,resetPin}=req.body; const id=req.params.id;
     const u=[],v=[];
     if(plan){u.push('plan=?');v.push(plan);}
     if(status){u.push('status=?');v.push(status);}
     if(email){u.push('email=?');v.push(email);}
+    let newPin = null;
+    if(resetPin){
+      newPin = generatePin();
+      u.push('dashboard_pin=?');
+      v.push(hashPin(newPin));
+    }
     if(u.length){v.push(id);await dbRun(`UPDATE dealers SET ${u.join(',')} WHERE id=?`,v);}
     if(prizes&&prizes.length>=4){
       await dbRun(`UPDATE prize_config SET w100=?,w200=?,w500=?,w1000=?,amt1=?,amt2=?,amt3=?,amt4=? WHERE dealer_id=?`,
         [prizes[0].weight,prizes[1].weight,prizes[2].weight,prizes[3].weight,
          prizes[0].amount,prizes[1].amount,prizes[2].amount,prizes[3].amount,id]);
     }
-    res.json({success:true});
+    res.json({success:true, ...(newPin ? {newPin} : {})});
   } catch(e){res.status(500).json({error:e.message});}
 });
 
 app.listen(PORT, () => {
   console.log(`\n⚡ Spin & Win running at http://localhost:${PORT}`);
+  console.log(`   DB: ${DB_PATH}`);
   console.log(`   Spin:      http://localhost:${PORT}/?qr=QR-LOT-001&dealer=DEALER-DEMO`);
   console.log(`   Dashboard: http://localhost:${PORT}/dashboard.html?dealer=DEALER-DEMO`);
   console.log(`   Admin:     http://localhost:${PORT}/admin.html\n`);
