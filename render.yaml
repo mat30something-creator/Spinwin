@@ -12,7 +12,6 @@ services:
       - key: PORT
         value: 10000
       - key: BASE_URL
-        generateValue: false
         value: https://spinwin-607f.onrender.com
       - key: DASHBOARD_URL
         value: https://spinwin-607f.onrender.com
@@ -20,6 +19,8 @@ services:
         value: "*"
       - key: DB_PATH
         value: ./spinwin.db
+      - key: ADMIN_PASSWORD_HASH
+        value: b433e3d25d8b55297297fc4a7bf1e020ccb8485af87d62e1f038917ef2496cf8
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -27,8 +28,16 @@ services:
       - key: SMTP_SECURE
         value: false
       - key: SMTP_USER
-        sync: false   # ← You'll paste this in Render's dashboard (your Gmail)
+        sync: false
       - key: SMTP_PASS
-        sync: false   # ← You'll paste your Gmail App Password here
+        sync: false
       - key: ADMIN_EMAIL
-        sync: false   # ← Your email to get notified of new dealer signups
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_BASIC
+        sync: false
+      - key: STRIPE_PRICE_PRO
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
