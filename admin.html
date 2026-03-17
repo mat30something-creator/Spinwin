@@ -366,7 +366,51 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/javascript">
+<script data-cfasync="false">
+// Admin login — isolated so Cloudflare cannot interfere
+async function doLogin() {
+  const pass = document.getElementById('loginPass').value;
+  if (!pass) return;
+  const btn = document.querySelector('.login-btn');
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Invalid password');
+    window._adminToken = data.token;
+    sessionStorage.setItem('adminToken', data.token);
+    document.getElementById('loginGate').style.display = 'none';
+    if (typeof init === 'function') init();
+  } catch(e) {
+    const errDiv = document.getElementById('loginErr');
+    errDiv.textContent = e.message || 'Could not connect — try again';
+    errDiv.style.display = 'block';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').style.borderColor = 'rgba(208,2,27,.6)';
+    setTimeout(() => {
+      errDiv.style.display = 'none';
+      document.getElementById('loginPass').style.borderColor = '';
+    }, 4000);
+  } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const p = document.getElementById('loginPass');
+  if (p) p.addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
+  // Auto-login if session exists
+  const token = sessionStorage.getItem('adminToken');
+  if (token) {
+    fetch('/api/admin/stats', { headers: {'x-admin-token': token} })
+      .then(r => { if(r.ok) { document.getElementById('loginGate').style.display='none'; window._adminToken=token; if(typeof init==='function') init(); }})
+      .catch(()=>{});
+  }
+});
+</script>
+
+<script data-cfasync="false" type="text/javascript">
 const API = '';
 const PLAN_PRICES = { starter:99, pro:199, agency:499 };
 
@@ -400,7 +444,8 @@ let defaultPrizes = [
 // ── Login ─────────────────────────────────────────────────────────────────────
 let adminToken = sessionStorage.getItem('adminToken') || '';
 
-async function doLogin() {
+// doLogin is defined in isolated script above
+function doLogin_unused() {
   const pass = document.getElementById('loginPass').value;
   if (!pass) return;
   const btn = document.querySelector('.login-btn');
@@ -432,16 +477,9 @@ async function doLogin() {
   } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
 }
 
-// Check for existing session on load
-window.addEventListener('load', () => {
-  if (adminToken) {
-    fetch('/api/admin/stats', { headers:{'x-admin-token': adminToken} })
-      .then(r => { if(r.ok) { document.getElementById('loginGate').style.display='none'; init(); } })
-      .catch(() => {});
-  }
-});
+// Session check moved to isolated script above
 
-document.getElementById('loginPass').addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
+// keyup listener moved to isolated script above
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
