@@ -3,7 +3,7 @@ services:
     name: spinwin
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install --build-from-source
     startCommand: node server.js
     plan: free
     envVars:
