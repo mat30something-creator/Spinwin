@@ -163,7 +163,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
     <div class="login-logo">⚡ SPIN &amp; WIN</div>
     <div class="login-sub">Super Admin Portal</div>
     <input class="login-input" type="password" id="loginPass" placeholder="Enter admin password" style="margin-bottom:16px"/>
-    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <button class="login-btn" id="loginBtn">Sign In</button>
     <div id="loginErr" style="display:none;color:#F87171;font-size:11px;margin-top:10px;padding:8px;background:rgba(208,2,27,.1);border-radius:4px;"></div>
   </div>
 </div>
@@ -396,17 +396,7 @@ async function doLogin() {
     }, 4000);
   } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
 }
-document.addEventListener('DOMContentLoaded', () => {
-  const p = document.getElementById('loginPass');
-  if (p) p.addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
-  // Auto-login if session exists
-  const token = sessionStorage.getItem('adminToken');
-  if (token) {
-    fetch('/api/admin/stats', { headers: {'x-admin-token': token} })
-      .then(r => { if(r.ok) { document.getElementById('loginGate').style.display='none'; window._adminToken=token; init(); }})
-      .catch(()=>{});
-  }
-});
+// Event listeners moved to bottom of script
 
 const API = '';
 const PLAN_PRICES = { basic:199, pro:399, starter:199, agency:399 };
@@ -889,3 +879,25 @@ function toast(msg, type='ok', dur=3000) {
   // Simple toast — reuse same pattern
   const el = document.createElement('div');
   el.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(${type==='err'?'248,113,113':'74,222,128'},.3);color:${type==='err'?'#F87171':'#4ADE80'};padd
+
+// ── Attach login events (Cloudflare-safe) ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var loginBtn = document.getElementById('loginBtn');
+  var loginPass = document.getElementById('loginPass');
+  if (loginBtn) loginBtn.addEventListener('click', doLogin);
+  if (loginPass) loginPass.addEventListener('keyup', function(e) { if(e.key==='Enter') doLogin(); });
+  var token = sessionStorage.getItem('adminToken');
+  if (token) {
+    fetch('/api/admin/stats', { headers: {'x-admin-token': token} })
+      .then(function(r) {
+        if (r.ok) {
+          document.getElementById('loginGate').style.display = 'none';
+          window._adminToken = token;
+          init();
+        }
+      }).catch(function(){});
+  }
+});
+</script>
+</body>
+</html>
