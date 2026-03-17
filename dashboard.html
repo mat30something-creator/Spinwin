@@ -155,20 +155,40 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
 
 @media(max-width:1000px){.stats{grid-template-columns:1fr 1fr;}.cg{grid-template-columns:1fr;}}
 @media(max-width:768px){.sidebar{display:none;}.main{padding:16px;}}
+
+/* ── PIN LOGIN GATE ── */
+#pinGate{position:fixed;top:0;left:0;right:0;bottom:0;background:#0C0C0C;z-index:9999;display:flex;align-items:center;justify-content:center;}
+.pin-box{background:#1A1A1A;border:1px solid rgba(245,197,24,.2);border-radius:16px;padding:40px 36px;width:380px;max-width:90vw;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.6);}
+.pin-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:#F5C518;margin-bottom:4px;}
+.pin-sub{font-size:12px;color:#666;margin-bottom:20px;letter-spacing:.5px;}
+.pin-dealer{font-size:15px;color:#F0EDE6;font-weight:600;margin-bottom:24px;padding:12px 16px;background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.15);border-radius:8px;}
+.pin-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.pin-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:16px;color:#F5C518;font-size:28px;letter-spacing:12px;text-align:center;outline:none;margin-bottom:14px;font-family:'Bebas Neue',sans-serif;transition:border-color .2s;}
+.pin-input:focus{border-color:rgba(245,197,24,.5);background:rgba(245,197,24,.04);}
+.pin-btn{width:100%;background:#D0021B;color:#fff;border:none;border-radius:8px;padding:14px;font-weight:700;font-size:15px;cursor:pointer;transition:background .15s;letter-spacing:.5px;box-shadow:0 4px 16px rgba(208,2,27,.3);}
+.pin-btn:hover{background:#B50018;}
+.pin-btn:disabled{background:#333;color:#666;cursor:not-allowed;box-shadow:none;}
+.pin-err{font-size:12px;color:#F87171;margin-top:10px;padding:10px;background:rgba(208,2,27,.1);border:1px solid rgba(208,2,27,.2);border-radius:6px;display:none;}
+.pin-note{font-size:10px;color:#444;margin-top:14px;line-height:1.6;}
 </style>
 </head>
 <body>
 
 <!-- PIN LOGIN GATE -->
-<div id="pinGate">
-  <div class="pin-box">
-    <div class="pin-logo">⚡ SPIN &amp; WIN</div>
-    <div class="pin-sub">Dealer Dashboard</div>
-    <div class="pin-dealer" id="pinDealerName">Loading...</div>
-    <input class="pin-input" type="password" id="pinInput" placeholder="••••••" maxlength="6" autocomplete="off"/>
-    <button class="pin-btn" id="pinBtn" onclick="doPin()">Sign In</button>
-    <div class="pin-err" id="pinErr"></div>
-    <div class="pin-note">Enter the 6-digit PIN from your welcome email.<br/>Contact support if you need help.</div>
+<div id="pinGate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0C0C0C;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#1A1A1A;border:1px solid rgba(245,197,24,.25);border-radius:16px;padding:40px 36px;width:380px;max-width:90vw;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:#F5C518;margin-bottom:4px;">⚡ SPIN &amp; WIN</div>
+    <div style="font-size:12px;color:#666;margin-bottom:20px;letter-spacing:.5px;">Dealer Dashboard</div>
+    <div id="pinDealerName" style="font-size:15px;color:#F0EDE6;font-weight:600;margin-bottom:24px;padding:12px 16px;background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.15);border-radius:8px;">Loading...</div>
+    <div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;text-align:left;">Enter Your 6-Digit PIN</div>
+    <input id="pinInput" type="password" placeholder="· · · · · ·" maxlength="6" autocomplete="off"
+      style="width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:8px;padding:16px;color:#F5C518;font-size:28px;letter-spacing:12px;text-align:center;outline:none;margin-bottom:14px;font-family:'Bebas Neue',sans-serif;box-sizing:border-box;"/>
+    <button id="pinBtn" onclick="doPin()"
+      style="width:100%;background:#D0021B;color:#fff;border:none;border-radius:8px;padding:14px;font-weight:700;font-size:15px;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 16px rgba(208,2,27,.3);">
+      ACCESS DASHBOARD →
+    </button>
+    <div id="pinErr" style="display:none;font-size:12px;color:#F87171;margin-top:12px;padding:10px;background:rgba(208,2,27,.1);border:1px solid rgba(208,2,27,.2);border-radius:6px;"></div>
+    <div style="font-size:10px;color:#444;margin-top:14px;line-height:1.6;">Your PIN was sent in your welcome email.<br/>Need help? Contact support.</div>
   </div>
 </div>
 
