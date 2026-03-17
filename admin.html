@@ -432,7 +432,7 @@ let defaultPrizes = [
 let adminToken = sessionStorage.getItem('adminToken') || '';
 
 // doLogin is defined in isolated script above
-function doLogin_unused() {
+async function doLogin_unused() {
   const pass = document.getElementById('loginPass').value;
   if (!pass) return;
   const btn = document.querySelector('.login-btn');
