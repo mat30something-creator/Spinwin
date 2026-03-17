@@ -215,9 +215,8 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       <input class="fi fi-search" type="text" placeholder="🔍  Search dealers…" id="dealerSearch" oninput="filterDealers()"/>
       <select class="fi" id="planFilter" onchange="filterDealers()">
         <option value="">All Plans</option>
-        <option value="starter">Starter</option>
+        <option value="basic">Basic</option>
         <option value="pro">Pro</option>
-        <option value="agency">Agency</option>
       </select>
       <select class="fi" id="statusFilter2" onchange="filterDealers()">
         <option value="">All Status</option>
@@ -344,7 +343,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
     </div>
     <div class="mrow">
       <div class="mfg"><label>Dealership Name *</label><input type="text" id="ndName" placeholder="Premier Auto Group"/></div>
-      <div class="mfg"><label>Plan</label><select id="ndPlan"><option value="starter">Starter $99</option><option value="pro" selected>Pro $199</option><option value="agency">Agency $499</option></select></div>
+      <div class="mfg"><label>Plan</label><select id="ndPlan"><option value="basic" selected>Basic $199/mo</option><option value="pro">Pro $399/mo</option></select></div>
     </div>
     <div class="mrow">
       <div class="mfg"><label>Contact Name</label><input type="text" id="ndContact" placeholder="Sales Manager"/></div>
@@ -412,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script data-cfasync="false" type="text/javascript">
 const API = '';
-const PLAN_PRICES = { starter:99, pro:199, agency:499 };
+const PLAN_PRICES = { basic:199, pro:399, starter:199, agency:399 };
 
 // Demo data
 let dealers = [
@@ -554,6 +553,7 @@ function updateAdminStats() {
 
 // ── Dealers table ─────────────────────────────────────────────────────────────
 function filterDealers() {
+  console.log('filterDealers called, dealers count:', dealers.length);
   const q  = (document.getElementById('dealerSearch').value||'').toLowerCase();
   const pf = document.getElementById('planFilter').value;
   const sf = document.getElementById('statusFilter2').value;
@@ -593,9 +593,8 @@ function openDealerModal(id) {
     <div class="mrow">
       <div class="mfg"><label>Dealership Name</label><input type="text" id="dmName" value="${esc(d.name)}"/></div>
       <div class="mfg"><label>Plan</label><select id="dmPlan">
-        <option value="starter"${d.plan==='starter'?' selected':''}>Starter $99/mo</option>
-        <option value="pro"${d.plan==='pro'?' selected':''}>Pro $199/mo</option>
-        <option value="agency"${d.plan==='agency'?' selected':''}>Agency $499/mo</option>
+        <option value="basic"${d.plan==='basic'?' selected':''}>Basic $199/mo</option>
+        <option value="pro"${d.plan==='pro'?' selected':''}>Pro $399/mo</option>
       </select></div>
     </div>
     <div class="mrow">
