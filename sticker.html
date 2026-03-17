@@ -4,233 +4,216 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Spin & Win — Print Stickers</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background: #f5f5f5; font-family: 'DM Sans', sans-serif; }
+body { background:#e8e8e8; font-family:'DM Sans',sans-serif; }
 
+/* Controls bar */
 .controls {
-  background: #111;
-  color: #fff;
-  padding: 16px 28px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  background:#0A2E8A;
+  color:#fff;
+  padding:14px 28px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  position:sticky;
+  top:0;
+  z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
 }
-.ctrl-logo { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; color:#F5C518; margin-right:8px; }
-.ctrl-label { font-size:12px; color:#888; }
+.ctrl-logo { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; color:#FFD234; margin-right:8px; }
+.ctrl-group { display:flex;flex-direction:column;gap:3px; }
+.ctrl-label { font-size:10px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.8px; }
 .ctrl-input {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius:5px; padding:7px 12px;
-  color:#fff; font-size:12px; outline:none; width:200px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:5px; padding:6px 12px;
+  color:#fff; font-size:12px; outline:none;
 }
+.ctrl-input::placeholder { color:rgba(255,255,255,.3); }
+.ctrl-select {
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:5px; padding:6px 12px;
+  color:#fff; font-size:12px; outline:none;
+  cursor:pointer;
+}
+.ctrl-select option { background:#0A2E8A; }
 .print-btn {
-  background:#D0021B; color:#fff; border:none; border-radius:5px;
-  padding:9px 20px; font-size:13px; font-weight:600;
-  cursor:pointer; margin-left:auto;
+  background:#FFD234; color:#0A2E8A; border:none; border-radius:6px;
+  padding:9px 22px; font-size:13px; font-weight:800; cursor:pointer;
+  margin-left:auto; letter-spacing:.3px; transition:all .15s;
 }
-.print-btn:hover { background:#B50018; }
+.print-btn:hover { background:#f0c800; transform:translateY(-1px); }
+.loading-badge {
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:5px; padding:6px 14px;
+  font-size:11px; color:rgba(255,255,255,.6);
+}
 
-/* Sticker grid */
+/* Sticker sheet */
 .sticker-sheet {
-  padding: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  max-width: 900px;
-  margin: 0 auto;
+  padding:32px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:24px;
+  justify-content:center;
+  max-width:960px;
+  margin:0 auto;
 }
 
-/* Individual sticker — 3.5" × 4" at 96dpi = 336×384px */
+/* Individual sticker — 3.5" × 2.2" */
 .sticker {
-  width: 336px;
-  height: 384px;
-  background: #0A0A0A;
-  border-radius: 14px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  box-shadow: 0 4px 24px rgba(0,0,0,.25);
-  page-break-inside: avoid;
+  width:336px;
+  height:210px;
+  border-radius:10px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  font-family:'DM Sans',sans-serif;
+  box-shadow:0 8px 32px rgba(0,0,0,.2), 0 2px 8px rgba(0,0,0,.12);
+  position:relative;
+  page-break-inside:avoid;
+  background:#fff;
 }
 
-/* Red accent top bar */
-.sticker-top {
-  background: #D0021B;
-  height: 8px;
-  width: 100%;
-  flex-shrink: 0;
+/* Navy corner fold */
+.sticker::before {
+  content:'';
+  position:absolute;
+  top:0; right:0;
+  width:0; height:0;
+  border-style:solid;
+  border-width:0 54px 54px 0;
+  border-color:transparent #0A2E8A transparent transparent;
+  z-index:2;
 }
 
-/* Diagonal stripe bg */
-.sticker-bg {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    -50deg,
-    transparent,
-    transparent 18px,
-    rgba(245,197,24,.03) 18px,
-    rgba(245,197,24,.03) 19px
-  );
-  pointer-events: none;
+/* Header */
+.s-header {
+  background:#1B4FBF;
+  padding:9px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:relative;
+  z-index:1;
+  flex-shrink:0;
+}
+.h-left { display:flex; align-items:center; gap:7px; }
+.h-bolt {
+  width:16px; height:16px; flex-shrink:0;
+  background:#FFD234;
+  clip-path:polygon(60% 0%,38% 46%,62% 46%,34% 100%,54% 54%,28% 54%);
+}
+.h-logo { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:3px; color:#fff; }
+.h-badge {
+  background:#FFD234; color:#0A2E8A;
+  font-size:8px; font-weight:800; letter-spacing:1.5px;
+  text-transform:uppercase; padding:3px 8px; border-radius:2px;
 }
 
-.sticker-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px 16px;
-  position: relative;
-  z-index: 1;
+/* Body */
+.s-body {
+  flex:1; background:#fff;
+  display:flex; position:relative; overflow:hidden; min-height:0;
+}
+.s-body::before {
+  content:'';
+  position:absolute;
+  left:0; top:0; bottom:0; width:5px;
+  background:#1B4FBF;
+}
+.s-body::after {
+  content:'';
+  position:absolute;
+  right:-20px; top:-20px;
+  width:120px; height:120px;
+  background:repeating-linear-gradient(-45deg,transparent,transparent 5px,rgba(27,79,191,.04) 5px,rgba(27,79,191,.04) 6px);
+  border-radius:50%;
 }
 
-.sticker-eyebrow {
-  background: rgba(245,197,24,.12);
-  border: 1px solid rgba(245,197,24,.25);
-  border-radius: 3px;
-  padding: 3px 10px;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #F5C518;
-  margin-bottom: 6px;
-  align-self: stretch;
-  text-align: center;
+.b-qr {
+  width:84px; height:84px;
+  margin:auto 0 auto 16px;
+  background:#f0f5ff;
+  border:1.5px solid #c8d8f8;
+  border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; position:relative; z-index:1;
+  overflow:hidden;
 }
+.b-qr img { width:100%; height:100%; }
+.b-qr .qr-placeholder { font-size:10px; color:#aaa; text-align:center; padding:8px; line-height:1.4; }
 
-.sticker-headline {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  line-height: .95;
-  letter-spacing: .5px;
-  text-align: center;
-  color: #fff;
-  margin-bottom: 8px;
+.b-content {
+  flex:1; padding:10px 12px 10px 10px;
+  display:flex; flex-direction:column; justify-content:center;
+  position:relative; z-index:1; min-width:0;
 }
-.sticker-headline span { color: #F5C518; }
+.b-eyebrow {
+  font-size:7.5px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase; color:#1B4FBF; margin-bottom:2px; white-space:nowrap;
+}
+.b-headline { font-family:'Bebas Neue',sans-serif; line-height:1; color:#0A0A0A; margin-bottom:3px; }
+.b-headline .l1 { font-size:15px; letter-spacing:1px; display:block; }
+.b-headline .l2 { font-size:28px; color:#1B4FBF; display:block; letter-spacing:.5px; }
+.b-headline .l3 { font-size:15px; letter-spacing:1px; display:block; }
+.b-sub { font-size:7.5px; color:#aaa; line-height:1.5; margin-bottom:8px; }
 
-/* QR code placeholder — replaced with real QR via JS */
-.qr-area {
-  background: #fff;
-  border-radius: 8px;
-  width: 130px;
-  height: 130px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  overflow: hidden;
-  flex-shrink: 0;
+.prizes { display:flex; gap:3px; }
+.pc {
+  flex:1; background:#f0f5ff; border:1px solid #c8d8f8;
+  border-radius:3px; padding:3px 2px; text-align:center;
+  border-bottom:2px solid #1B4FBF;
 }
-.qr-area img { width: 100%; height: 100%; }
-.qr-area .qr-placeholder {
-  font-size: 10px;
-  color: #999;
-  text-align: center;
-  padding: 8px;
-  line-height: 1.4;
-}
+.pc-amt { font-family:'Bebas Neue',sans-serif; font-size:11px; color:#1B4FBF; line-height:1; }
+.pc-lbl { font-size:6px; color:#bbb; text-transform:uppercase; letter-spacing:.3px; }
 
-.sticker-cta {
-  font-size: 10px;
-  color: #888;
-  text-align: center;
-  margin-top: 6px;
+/* Footer */
+.s-footer {
+  background:#0A2E8A; padding:5px 16px;
+  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
 }
-.sticker-cta strong { color: #ccc; display: block; font-size: 11px; margin-bottom: 1px; }
+.f-dealer { font-size:9px; font-weight:700; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:1px; }
+.f-disc { font-size:7px; color:rgba(255,255,255,.3); }
 
-/* Prize row */
-.prizes-row {
-  display: flex;
-  gap: 5px;
-  justify-content: center;
-  width: 100%;
-  margin-top: 8px;
-}
-.prize-chip {
-  flex: 1;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 4px;
-  text-align: center;
-  padding: 5px 3px;
-}
-.prize-chip .pamt {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 14px;
-  color: #F5C518;
-  line-height: 1;
-}
-.prize-chip .plbl {
-  font-size: 7px;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-
-.sticker-footer {
-  background: rgba(245,197,24,.07);
-  border-top: 1px solid rgba(245,197,24,.12);
-  padding: 7px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
-.dealer-name-label {
-  font-size: 10px;
-  color: #888;
-  letter-spacing: .5px;
-}
-.qr-id-label {
-  font-size: 9px;
-  color: #444;
-  font-family: monospace;
-}
-
-/* ── Print styles ─────────────────────────────────────────────────────────── */
+/* Print styles */
 @media print {
-  body { background: #fff !important; }
-  .controls { display: none !important; }
-  .sticker-sheet { padding: 0; gap: 8mm; }
+  body { background:#fff !important; }
+  .controls { display:none !important; }
+  .sticker-sheet { padding:0; gap:8mm; }
   .sticker {
-    width: 88mm;   /* ~3.5 inches */
-    height: 102mm; /* ~4 inches */
-    box-shadow: none;
-    border: 0.5px solid #ddd;
+    width:89mm; height:56mm;
+    box-shadow:none; border:0.5px solid #ddd;
   }
-  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
 </style>
 </head>
 <body>
 
+<!-- Controls -->
 <div class="controls">
-  <div class="ctrl-logo">⚡ SPIN &amp; WIN</div>
-  <div>
+  <div class="ctrl-logo">⚡ SPIN & WIN</div>
+  <div class="ctrl-group">
     <div class="ctrl-label">Dealer Name</div>
-    <input class="ctrl-input" type="text" id="ctrlDealer" placeholder="Premier Auto Group" oninput="updateStickers()"/>
+    <input class="ctrl-input" type="text" id="ctrlDealer" placeholder="Your Dealership" oninput="updateStickers()"/>
   </div>
-  <div>
-    <div class="ctrl-label">How many stickers?</div>
-    <select class="ctrl-input" id="ctrlCount" style="width:100px" onchange="updateStickers()">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="4" selected>4</option>
-      <option value="6">6</option>
-      <option value="8">8</option>
+  <div class="ctrl-group">
+    <div class="ctrl-label">How Many?</div>
+    <select class="ctrl-select" id="ctrlCount" onchange="updateStickers()">
+      <option value="1">1 sticker</option>
+      <option value="2">2 stickers</option>
+      <option value="4" selected>4 stickers</option>
+      <option value="6">6 stickers</option>
+      <option value="8">8 stickers</option>
     </select>
   </div>
+  <div class="loading-badge" id="statusBadge">Loading prize config…</div>
   <button class="print-btn" onclick="window.print()">🖨 Print Stickers</button>
 </div>
 
@@ -238,67 +221,110 @@ body { background: #f5f5f5; font-family: 'DM Sans', sans-serif; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-const params     = new URLSearchParams(location.search);
-const QR_ID      = params.get('qr')     || 'QR-LOT-001';
-const DEALER_ID  = params.get('dealer') || 'DEALER-DEMO';
-const LABEL      = params.get('label')  || '';
-const BASE_URL   = location.origin;
+const params    = new URLSearchParams(location.search);
+const QR_ID     = params.get('qr')     || 'QR-LOT-001';
+const DEALER_ID = params.get('dealer') || 'DEALER-DEMO';
+const BASE_URL  = location.origin;
 
-// Pre-fill dealer name from param or fetch from server
-document.getElementById('ctrlDealer').value =
-  params.get('name') || 'Premier Auto Group';
+// Default prizes — overridden by live config
+let prizes = [
+  { amt: '$100',   label: '$100' },
+  { amt: '$200',   label: '$200' },
+  { amt: '$500',   label: '$500' },
+  { amt: '$1,000', label: '$1,000' },
+];
+let topPrize = '$1,000';
+let dealerName = params.get('name') || 'Your Dealership';
+
+// Load live config from API
+async function loadConfig() {
+  try {
+    const res = await fetch(`/api/qr/${QR_ID}/config`);
+    if (!res.ok) throw new Error('Not found');
+    const data = await res.json();
+
+    dealerName = data.dealerName || dealerName;
+    document.getElementById('ctrlDealer').value = dealerName;
+
+    // Build prizes from live config
+    const p = data.prizes;
+    prizes = [
+      { amt: `$${Number(p.amt1||100).toLocaleString()}`, label: `$${Number(p.amt1||100).toLocaleString()}` },
+      { amt: `$${Number(p.amt2||200).toLocaleString()}`, label: `$${Number(p.amt2||200).toLocaleString()}` },
+      { amt: `$${Number(p.amt3||500).toLocaleString()}`, label: `$${Number(p.amt3||500).toLocaleString()}` },
+      { amt: `$${Number(p.amt4||1000).toLocaleString()}`, label: `$${Number(p.amt4||1000).toLocaleString()}` },
+    ];
+
+    // Find the highest prize for the headline
+    const amounts = [p.amt1||100, p.amt2||200, p.amt3||500, p.amt4||1000];
+    const max = Math.max(...amounts);
+    topPrize = `$${Number(max).toLocaleString()}`;
+
+    document.getElementById('statusBadge').textContent = `✓ Live prizes loaded`;
+    document.getElementById('statusBadge').style.color = '#4ADE80';
+  } catch(e) {
+    document.getElementById('statusBadge').textContent = 'Using default prizes';
+  }
+  updateStickers();
+}
 
 function updateStickers() {
-  const count      = parseInt(document.getElementById('ctrlCount').value);
-  const dealerName = document.getElementById('ctrlDealer').value || 'Your Dealership';
-  const sheet      = document.getElementById('stickerSheet');
-  sheet.innerHTML  = '';
+  const count  = parseInt(document.getElementById('ctrlCount').value);
+  const dealer = document.getElementById('ctrlDealer').value || dealerName || 'Your Dealership';
+  const sheet  = document.getElementById('stickerSheet');
+  sheet.innerHTML = '';
 
   for (let i = 0; i < count; i++) {
-    const div  = document.createElement('div');
+    const div = document.createElement('div');
     div.className = 'sticker';
-    div.id = `sticker-${i}`;
     div.innerHTML = `
-      <div class="sticker-top"></div>
-      <div class="sticker-bg"></div>
-      <div class="sticker-body">
-        <div class="sticker-eyebrow">🔒 Exclusive Offer — Scan to Unlock</div>
-        <div class="sticker-headline">WIN UP TO<br/><span>$1,000 OFF</span><br/>THIS VEHICLE</div>
-        <div class="qr-area" id="qr-canvas-${i}">
-          <div class="qr-placeholder">Loading QR…</div>
+      <div class="s-header">
+        <div class="h-left">
+          <div class="h-bolt"></div>
+          <div class="h-logo">SPIN &amp; WIN</div>
         </div>
-        <div class="sticker-cta">
-          <strong>Scan with your phone camera</strong>
-          Enter your info for an instant prize spin
+        <div class="h-badge">Exclusive Vehicle Offer</div>
+      </div>
+      <div class="s-body">
+        <div class="b-qr" id="qr-${i}">
+          <div class="qr-placeholder">Generating QR…</div>
         </div>
-        <div class="prizes-row">
-          <div class="prize-chip"><div class="pamt">$100</div><div class="plbl">Off</div></div>
-          <div class="prize-chip"><div class="pamt">$200</div><div class="plbl">Off</div></div>
-          <div class="prize-chip"><div class="pamt">$500</div><div class="plbl">Off</div></div>
-          <div class="prize-chip"><div class="pamt">$1K</div><div class="plbl">Off</div></div>
+        <div class="b-content">
+          <div class="b-eyebrow">Scan to unlock your prize</div>
+          <div class="b-headline">
+            <span class="l1">WIN UP TO</span>
+            <span class="l2">${escHtml(topPrize)} OFF</span>
+            <span class="l3">THIS VEHICLE</span>
+          </div>
+          <div class="b-sub">Point your phone camera at the QR code<br/>No app needed · Takes 30 seconds</div>
+          <div class="prizes">
+            ${prizes.map(p => `
+              <div class="pc">
+                <div class="pc-amt">${escHtml(p.label)}</div>
+                <div class="pc-lbl">off</div>
+              </div>`).join('')}
+          </div>
         </div>
       </div>
-      <div class="sticker-footer">
-        <div class="dealer-name-label">${escHtml(dealerName)}</div>
-        <div class="qr-id-label">${escHtml(QR_ID)}</div>
-      </div>
-    `;
+      <div class="s-footer">
+        <div class="f-dealer">${escHtml(dealer)}</div>
+        <div class="f-disc">No purchase necessary · One spin per device</div>
+      </div>`;
     sheet.appendChild(div);
 
-    // Generate QR code into the container
-    const qrContainer = document.getElementById(`qr-canvas-${i}`);
+    // Generate QR code
+    const qrContainer = document.getElementById(`qr-${i}`);
     qrContainer.innerHTML = '';
     try {
       new QRCode(qrContainer, {
         text: `${BASE_URL}/?qr=${QR_ID}&dealer=${DEALER_ID}`,
-        width: 130,
-        height: 130,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
+        width: 84, height: 84,
+        colorDark: '#1B4FBF',
+        colorLight: '#f0f5ff',
         correctLevel: QRCode.CorrectLevel.H
       });
     } catch(e) {
-      qrContainer.innerHTML = '<div class="qr-placeholder">QR requires server</div>';
+      qrContainer.innerHTML = '<div class="qr-placeholder">QR code</div>';
     }
   }
 }
@@ -308,7 +334,7 @@ function escHtml(s) {
 }
 
 // Init
-updateStickers();
+loadConfig();
 </script>
 </body>
 </html>
