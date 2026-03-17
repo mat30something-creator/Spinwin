@@ -164,6 +164,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
     <div class="login-sub">Super Admin Portal</div>
     <input class="login-input" type="password" id="loginPass" placeholder="Enter admin password" style="margin-bottom:16px"/>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div id="loginErr" style="display:none;color:#F87171;font-size:11px;margin-top:10px;padding:8px;background:rgba(208,2,27,.1);border-radius:4px;"></div>
   </div>
 </div>
 
@@ -405,25 +406,30 @@ async function doLogin() {
   const btn = document.querySelector('.login-btn');
   btn.textContent = 'Signing in...'; btn.disabled = true;
   try {
-    const res  = await fetch('/api/admin/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: pass })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Invalid password');
     adminToken = data.token;
     sessionStorage.setItem('adminToken', adminToken);
-    document.getElementById('loginGate').style.display='none';
+    document.getElementById('loginGate').style.display = 'none';
     init();
   } catch(e) {
-    document.getElementById('loginPass').style.borderColor='rgba(208,2,27,.5)';
+    document.getElementById('loginPass').style.borderColor = 'rgba(208,2,27,.5)';
     document.getElementById('loginPass').value = '';
-    document.getElementById('loginPass').placeholder = 'Incorrect — try again';
-    setTimeout(()=>{
-      document.getElementById('loginPass').style.borderColor='';
-      document.getElementById('loginPass').placeholder='Enter admin password';
-    }, 2000);
-  } finally { btn.textContent='Sign In'; btn.disabled=false; }
+    document.getElementById('loginPass').placeholder = e.message || 'Incorrect — try again';
+    const errDiv = document.getElementById('loginErr');
+    errDiv.textContent = 'Error: ' + (e.message || 'Could not connect to server');
+    errDiv.style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('loginPass').style.borderColor = '';
+      document.getElementById('loginPass').placeholder = 'Enter admin password';
+      errDiv.style.display = 'none';
+    }, 4000);
+  } finally { btn.textContent = 'Sign In'; btn.disabled = false; }
 }
 
 // Check for existing session on load
