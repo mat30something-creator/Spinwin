@@ -182,24 +182,86 @@ async function sendLeadEmail(dealer, lead, config) {
 async function sendWelcomeEmail(dealer, pin, firstQrId) {
   if (!process.env.SMTP_USER) return;
   const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  const isPro = dealer.plan === 'pro';
+
+  const proInstructions = isPro ? `
+    <div style="background:#1a1a1a;border:1px solid rgba(245,197,24,.15);border-radius:8px;padding:20px;margin-bottom:16px;">
+      <h3 style="color:#F5C518;font-size:14px;margin-bottom:12px;">⭐ Your Pro Plan — Getting Started</h3>
+
+      <div style="margin-bottom:14px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">🔳 Step 1 — Generate QR Codes & Print Stickers</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Go to your dashboard → <strong style="color:#ccc">QR Codes tab</strong> → click <strong style="color:#ccc">+ New QR Code</strong>. Create one for each area of your lot (e.g. "Lot Row A", "Showroom Floor"). Then click <strong style="color:#ccc">Print Sticker</strong> to print and apply them to vehicles.</div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">👥 Step 2 — Add Your Sales Team</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Go to <strong style="color:#ccc">Salesmen tab</strong> → click <strong style="color:#ccc">+ Add Salesman</strong>. Add each member of your sales team with their name, email, and phone. Once added, you can assign incoming leads directly to them from the Leads tab.</div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">🎨 Step 3 — Add Your Branding</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Go to <strong style="color:#ccc">Settings tab</strong> → <strong style="color:#ccc">Custom Branding</strong>. Upload your dealership logo URL and choose your brand color. Your spin page will automatically match your dealership's look.</div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">🎰 Step 4 — Customize Your Prizes</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Go to <strong style="color:#ccc">Settings tab</strong> → <strong style="color:#ccc">Prize Amounts & Odds</strong>. Set the dollar amounts for each prize tier and adjust the odds. Higher weight = awarded more often. Don't forget to click <strong style="color:#ccc">Save Prize Settings</strong>.</div>
+      </div>
+
+      <div>
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">📊 Step 5 — Monitor Your Analytics</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Go to <strong style="color:#ccc">Analytics tab</strong> to track conversion rates, prize distribution, which QR codes get the most scans, and your sales team's performance.</div>
+      </div>
+    </div>` : `
+    <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:20px;margin-bottom:16px;">
+      <h3 style="color:#F5C518;font-size:14px;margin-bottom:12px;">🚀 Getting Started in 3 Steps</h3>
+      <div style="margin-bottom:12px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">🔳 Step 1 — Print Your Stickers</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Click the <strong style="color:#ccc">Print Stickers</strong> link below, print them on label paper, and apply to your vehicle windows. Customers scan with their phone — no app needed.</div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">🎰 Step 2 — Customize Your Prizes</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Log into your dashboard → <strong style="color:#ccc">Settings tab</strong> → adjust your prize amounts and odds to match your promotions.</div>
+      </div>
+      <div>
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;">📋 Step 3 — Watch Leads Roll In</div>
+        <div style="color:#888;font-size:12px;line-height:1.6">Every scan sends you an instant email with the customer's name, phone, and email. View and manage all leads in your dashboard.</div>
+      </div>
+    </div>`;
+
   await transporter.sendMail({
     from: `"Spin & Win" <${process.env.SMTP_USER}>`,
     to: dealer.email,
     subject: `⚡ Welcome to Spin & Win — ${dealer.name}`,
-    html: `<div style="font-family:sans-serif;max-width:560px;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;">
-      <h2 style="color:#F5C518">⚡ Welcome to Spin & Win!</h2>
-      <p style="color:#888;margin-bottom:20px">Hi ${dealer.contact||dealer.name}, your account is ready.</p>
+    html: `<div style="font-family:sans-serif;max-width:580px;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;">
+      <h2 style="color:#F5C518;margin-bottom:4px">⚡ Welcome to Spin & Win!</h2>
+      <p style="color:#888;margin-bottom:20px">Hi ${dealer.contact||dealer.name}, your ${isPro ? 'Pro' : 'Basic'} account is ready. Here's everything you need to get started.</p>
+
       <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:20px;margin-bottom:16px;">
         <p style="margin:6px 0;font-size:13px">🏢 <strong>${dealer.name}</strong></p>
-        <p style="margin:6px 0;font-size:13px">🔑 Dashboard PIN: <strong style="color:#F5C518;font-size:18px;letter-spacing:3px">${pin}</strong></p>
-        <p style="margin:6px 0;font-size:11px;color:#555">Keep this PIN safe — you'll need it to access your dashboard</p>
+        <p style="margin:6px 0;font-size:13px">📋 Plan: <strong style="color:${isPro?'#F5C518':'#ccc'}">${isPro ? 'Pro ⭐' : 'Basic'}</strong></p>
+        <p style="margin:6px 0;font-size:13px">🔑 Dashboard PIN: <strong style="color:#F5C518;font-size:20px;letter-spacing:4px">${pin}</strong></p>
+        <p style="margin:6px 0;font-size:11px;color:#555">Save this PIN — you'll need it every time you log in. You can change it in Settings.</p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-        <a href="${baseUrl}/dashboard.html?dealer=${dealer.id}" style="display:block;background:#D0021B;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center">📊 Open My Dashboard →</a>
-        <a href="${baseUrl}/?qr=${firstQrId}&dealer=${dealer.id}" style="display:block;background:#1a1a1a;color:#F5C518;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;border:1px solid rgba(245,197,24,.3)">🎰 Preview Spin Page →</a>
-        <a href="${baseUrl}/sticker.html?qr=${firstQrId}&dealer=${dealer.id}&name=${encodeURIComponent(dealer.name)}" style="display:block;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.1)">🔳 Print Stickers →</a>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <a href="${baseUrl}/dashboard.html?dealer=${dealer.id}" style="display:block;background:#D0021B;color:#fff;padding:13px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;font-size:14px">📊 Open My Dashboard →</a>
+        <a href="${baseUrl}/?qr=${firstQrId}&dealer=${dealer.id}" style="display:block;background:#1a1a1a;color:#F5C518;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;border:1px solid rgba(245,197,24,.3)">🎰 Preview My Spin Page →</a>
+        <a href="${baseUrl}/sticker.html?qr=${firstQrId}&dealer=${dealer.id}&name=${encodeURIComponent(dealer.name)}" style="display:block;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.1)">🔳 Print My Stickers →</a>
       </div>
-      <p style="font-size:11px;color:#555">Dealer ID: ${dealer.id}<br/>Plan: ${dealer.plan}</p>
+
+      ${proInstructions}
+
+      <div style="background:#111;border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:12px;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Your Account Details</div>
+        <div style="font-size:12px;color:#666;">Dealer ID: <span style="color:#888">${dealer.id}</span></div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">Spin Page URL: <span style="color:#888">${baseUrl}/?qr=${firstQrId}&dealer=${dealer.id}</span></div>
+      </div>
+
+      <p style="font-size:11px;color:#444;text-align:center;line-height:1.6">
+        Questions? Reply to this email or visit <a href="${baseUrl}/signup.html" style="color:#F5C518">spinwinleads.com</a><br/>
+        You can manage your account at any time from your dashboard.
+      </p>
     </div>`
   });
 }

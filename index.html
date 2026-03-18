@@ -112,8 +112,8 @@ canvas{border-radius:50%;box-shadow:0 0 40px rgba(245,197,24,.12),0 0 80px rgba(
   <!-- Header -->
   <div class="header">
     <div style="display:flex;align-items:center;gap:8px;">
-      <img id="dealerLogo" style="display:none;height:32px;width:auto;border-radius:4px;object-fit:contain;" alt="Dealer Logo"/>
-      <div class="logo">⚡ SPIN &amp; WIN</div>
+      <img id="dealerLogo" style="display:none;height:36px;max-width:120px;border-radius:4px;object-fit:contain;background:#fff;padding:3px;" alt="Dealer Logo"/>
+      <div class="logo" id="spinWinLogo">⚡ SPIN &amp; WIN</div>
     </div>
     <div class="dealer-tag" id="dealerTag">Loading…</div>
   </div>
@@ -249,7 +249,11 @@ window.addEventListener('load', async () => {
     }
     if (data.plan === 'pro' && data.brandLogo) {
       const logoEl = document.getElementById('dealerLogo');
-      if (logoEl) { logoEl.src = data.brandLogo; logoEl.style.display = 'block'; }
+      if (logoEl) {
+        logoEl.src = data.brandLogo;
+        logoEl.style.display = 'block';
+        logoEl.onerror = () => { logoEl.style.display = 'none'; }; // hide if URL broken
+      }
     }
     prizeConfig = data.prizes;
     window._cooldownDays = data.cooldownDays || 30;

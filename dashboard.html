@@ -1152,28 +1152,56 @@ async function printStickerFor(qrId, label) {
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
-function updateRangeVal(rangeId, valId) {
-  const val = document.getElementById(rangeId).value;
-  // Calculate total of all weights
-  const ids = ['rw100','rw200','rw500','rw1000'];
-  const total = ids.reduce((s,id) => s + (+(document.getElementById(id)?.value||0)), 0) || 1;
-  const thisPct = Math.round((+val/total)*100);
-  document.getElementById(valId).textContent = thisPct + '%';
-  // Show total indicator
-  const totEl = document.getElementById('weightsTotal');
-  if (totEl) {
-    const allPcts = ids.reduce((s,id) => s + Math.round((+(document.getElementById(id)?.value||0)/total)*100), 0);
-    totEl.textContent = 'Total: 100% ✓';
-    totEl.style.color = '#4ADE80';
-  }
-  // Update all other percentages too
-  ids.forEach((id,i) => {
-    const v = +(document.getElementById(id)?.value||0);
-    const pct = Math.round((v/total)*100);
-    const pvId = id.replace('rw','rv');
-    const pvEl = document.getElementById(pvId.replace('rv100','rv100').replace('rv200','rv200').replace('rv500','rv500').replace('rv1000','rv1000'));
-    if (pvEl && id !== rangeId) pvEl.textContent = pct + '%';
+function updateRangeVal(changedId, valId) {
+  // When one slider moves, redistribute remaining % evenly among others
+  const sliders = [
+    {range:'rw100',  val:'rv100'},
+    {range:'rw200',  val:'rv200'},
+    {range:'rw500',  val:'rv500'},
+    {range:'rw1000', val:'rv1000'},
+  ];
+
+  const changedEl = document.getElementById(changedId);
+  if (!changedEl) return;
+  const changedVal = +changedEl.value;
+
+  // Remaining % to distribute among other sliders
+  const remaining = 100 - changedVal;
+  const others = sliders.filter(s => s.range !== changedId);
+
+  // Get current total of others
+  const othersTotal = others.reduce((s,s2) => s + (+(document.getElementById(s2.range)?.value||0)), 0) || 1;
+
+  // Redistribute proportionally
+  others.forEach(s => {
+    const el = document.getElementById(s.range);
+    if (!el) return;
+    const proportion = (+(el.value||0)) / othersTotal;
+    const newVal = Math.max(0, Math.round(remaining * proportion));
+    el.value = newVal;
   });
+
+  // Ensure total is exactly 100 (fix rounding)
+  const currentTotal = sliders.reduce((s,s2) => s + (+(document.getElementById(s2.range)?.value||0)), 0);
+  if (currentTotal !== 100) {
+    const diff = 100 - currentTotal;
+    const firstOther = others.find(s => +(document.getElementById(s.range)?.value||0) + diff >= 0);
+    if (firstOther) {
+      const el = document.getElementById(firstOther.range);
+      if (el) el.value = +el.value + diff;
+    }
+  }
+
+  // Update all % displays
+  sliders.forEach(s => {
+    const el = document.getElementById(s.range);
+    const vEl = document.getElementById(s.val);
+    if (el && vEl) vEl.textContent = el.value + '%';
+  });
+
+  // Update total indicator
+  const totEl = document.getElementById('weightsTotal');
+  if (totEl) { totEl.textContent = 'Total: 100% ✓'; totEl.style.color = '#4ADE80'; }
 }
 
 async function saveWeights() {
