@@ -359,7 +359,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
         </div>
         <div class="fg">
           <label>Notification Email *</label>
-          <input type="email" id="sEmail" placeholder="sales@yourdealership.com" autocomplete="off" value=""/>
+          <input type="email" id="sEmail" placeholder="sales@yourdealership.com" autocomplete="new-password" name="dealer-notify-email" value=""/>
         </div>
         <div class="fg">
           <label>Phone</label>
@@ -534,38 +534,21 @@ function checkPinMatch() {
 }
 
 function balancePrizeSlider(changedIdx, newVal) {
-  // Set the changed prize weight
   prizes[changedIdx].weight = newVal;
-
-  // Redistribute remaining among others proportionally
-  const remaining = 100 - newVal;
-  const others = prizes.map((p,i) => ({p,i})).filter(({i}) => i !== changedIdx);
-  const othersTotal = others.reduce((s,{p}) => s + p.weight, 0) || 1;
-
-  others.forEach(({p,i}) => {
-    p.weight = Math.max(0, Math.round(remaining * (p.weight / othersTotal)));
-  });
-
-  // Fix rounding to ensure total = 100
-  const total = prizes.reduce((s,p) => s + p.weight, 0);
-  if (total !== 100) {
-    const diff = 100 - total;
-    const firstOther = others.find(({p}) => p.weight + diff >= 0);
-    if (firstOther) firstOther.p.weight += diff;
-  }
-
-  // Update all sliders and displays
-  renderPrizeRows();
+  updateOdds();
 }
 
 function updateOdds() {
   const total = prizes.reduce((s,p)=>s+p.weight,0)||1;
   prizes.forEach((p,i) => {
+    const pct = Math.round(p.weight/total*100);
     const el = document.getElementById(`wpct${i}`);
-    if (el) el.textContent = Math.round(p.weight/total*100)+'%';
+    const wEl = document.getElementById(`wval${i}`);
+    if (el) el.textContent = pct+'%';
+    if (wEl) wEl.textContent = p.weight;
   });
   const oddsEl = document.getElementById('totalOdds');
-  oddsEl.textContent = `${prizes.map((p,i)=>`$${p.amount}: ${Math.round(p.weight/total*100)}%`).join(' · ')} = 100% total`;
+  oddsEl.textContent = `Odds: ${prizes.map((p,i)=>`$${p.amount}=${Math.round(p.weight/total*100)}%`).join(', ')} · Weights are relative — they always add to 100%`;
   oddsEl.style.color = '#4ADE80';
 }
 
