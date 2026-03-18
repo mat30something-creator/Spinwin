@@ -350,18 +350,67 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
     <!-- Prize Weights -->
     <div class="set-card">
       <div class="set-ttl">Prize Amounts &amp; Odds</div>
-      <div class="set-sub">Set each prize dollar amount and how often it's awarded. Higher weight = awarded more frequently.</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 1 Amount ($)</div><input type="number" class="ni" id="amt1" value="100" min="1" style="width:100%"/></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 1 Weight</div><input type="range" id="rw100" min="0" max="100" value="50" oninput="updateRangeVal('rw100','rv100')" style="width:100%;margin-top:8px"/><span id="rv100" style="font-size:11px;color:var(--muted)">50</span></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 2 Amount ($)</div><input type="number" class="ni" id="amt2" value="200" min="1" style="width:100%"/></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 2 Weight</div><input type="range" id="rw200" min="0" max="100" value="30" oninput="updateRangeVal('rw200','rv200')" style="width:100%;margin-top:8px"/><span id="rv200" style="font-size:11px;color:var(--muted)">30</span></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 3 Amount ($)</div><input type="number" class="ni" id="amt3" value="500" min="1" style="width:100%"/></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 3 Weight</div><input type="range" id="rw500" min="0" max="100" value="15" oninput="updateRangeVal('rw500','rv500')" style="width:100%;margin-top:8px"/><span id="rv500" style="font-size:11px;color:var(--muted)">15</span></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 4 Amount ($)</div><input type="number" class="ni" id="amt4" value="1000" min="1" style="width:100%"/></div>
-        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 4 Weight</div><input type="range" id="rw1000" min="0" max="100" value="5" oninput="updateRangeVal('rw1000','rv1000')" style="width:100%;margin-top:8px"/><span id="rv1000" style="font-size:11px;color:var(--muted)">5</span></div>
+      <div class="set-sub">Set each prize amount and its winning chance. All percentages must add up to 100%.</div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
+
+        <div style="display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:12px;">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Prize 1 ($)</div>
+            <input type="number" class="ni" id="amt1" value="100" min="1" style="width:100%"/>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#4ADE80;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Chance: <span id="rv100">50</span>%</div>
+            <input type="range" id="rw100" min="1" max="97" value="50" step="1"
+              oninput="updateRangeVal('rw100','rv100')" style="width:100%;accent-color:#4ADE80"/>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#4ADE80;text-align:right"><span id="rv100b">50</span>%</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:12px;">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Prize 2 ($)</div>
+            <input type="number" class="ni" id="amt2" value="200" min="1" style="width:100%"/>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#60A5FA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Chance: <span id="rv200">30</span>%</div>
+            <input type="range" id="rw200" min="1" max="97" value="30" step="1"
+              oninput="updateRangeVal('rw200','rv200')" style="width:100%;accent-color:#60A5FA"/>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#60A5FA;text-align:right"><span id="rv200b">30</span>%</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:12px;">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Prize 3 ($)</div>
+            <input type="number" class="ni" id="amt3" value="500" min="1" style="width:100%"/>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#F87171;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Chance: <span id="rv500">15</span>%</div>
+            <input type="range" id="rw500" min="1" max="97" value="15" step="1"
+              oninput="updateRangeVal('rw500','rv500')" style="width:100%;accent-color:#F87171"/>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#F87171;text-align:right"><span id="rv500b">15</span>%</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:12px;">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Prize 4 ($)</div>
+            <input type="number" class="ni" id="amt4" value="1000" min="1" style="width:100%"/>
+          </div>
+          <div>
+            <div style="font-size:9px;color:#F5C518;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Chance: <span id="rv1000">5</span>%</div>
+            <input type="range" id="rw1000" min="1" max="97" value="5" step="1"
+              oninput="updateRangeVal('rw1000','rv1000')" style="width:100%;accent-color:#F5C518"/>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#F5C518;text-align:right"><span id="rv1000b">5</span>%</div>
+        </div>
+
       </div>
-      <div id="weightsTotal" style="font-size:11px;color:#4ADE80;margin-bottom:8px;">Total: 100% ✓</div>
+
+      <div id="weightsTotal" style="font-size:12px;padding:8px 12px;border-radius:6px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#4ADE80;margin-bottom:12px;">
+        ✓ Total: 100% — Prizes will be awarded at these exact odds
+      </div>
       <button class="btn" onclick="saveWeights()">Save Prize Settings</button>
     </div>
 
@@ -1153,29 +1202,56 @@ async function printStickerFor(qrId, label) {
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 function updateRangeVal(changedId, valId) {
-  // Simply show each weight as a % of the total — no auto-balance fighting
+  // Each slider IS the percentage directly (1-97)
+  // Just update the display labels and show total
   const sliders = [
-    {range:'rw100',  val:'rv100'},
-    {range:'rw200',  val:'rv200'},
-    {range:'rw500',  val:'rv500'},
-    {range:'rw1000', val:'rv1000'},
+    {range:'rw100',  val:'rv100',  val2:'rv100b'},
+    {range:'rw200',  val:'rv200',  val2:'rv200b'},
+    {range:'rw500',  val:'rv500',  val2:'rv500b'},
+    {range:'rw1000', val:'rv1000', val2:'rv1000b'},
   ];
-  const total = sliders.reduce((s,sl) => s + (+(document.getElementById(sl.range)?.value||0)), 0) || 1;
+
+  const total = sliders.reduce((s,sl) => s + (+(document.getElementById(sl.range)?.value||0)), 0);
+
   sliders.forEach(sl => {
-    const el  = document.getElementById(sl.range);
-    const vEl = document.getElementById(sl.val);
-    if (el && vEl) vEl.textContent = Math.round((+el.value / total) * 100) + '%';
+    const el = document.getElementById(sl.range);
+    const v = el ? +el.value : 0;
+    const vEl  = document.getElementById(sl.val);
+    const vEl2 = document.getElementById(sl.val2);
+    if (vEl)  vEl.textContent  = v;
+    if (vEl2) vEl2.textContent = v;
   });
+
   const totEl = document.getElementById('weightsTotal');
-  if (totEl) { totEl.textContent = 'Weights are relative — always add to 100% ✓'; totEl.style.color = '#4ADE80'; }
+  if (totEl) {
+    if (total === 100) {
+      totEl.textContent = '✓ Total: 100% — Prizes will be awarded at these exact odds';
+      totEl.style.background = 'rgba(34,197,94,.08)';
+      totEl.style.borderColor = 'rgba(34,197,94,.2)';
+      totEl.style.color = '#4ADE80';
+    } else {
+      totEl.textContent = `⚠ Total: ${total}% — Must equal exactly 100% before saving`;
+      totEl.style.background = 'rgba(248,113,113,.08)';
+      totEl.style.borderColor = 'rgba(248,113,113,.2)';
+      totEl.style.color = '#F87171';
+    }
+  }
 }
 
 async function saveWeights() {
+  const w100  = +document.getElementById('rw100').value;
+  const w200  = +document.getElementById('rw200').value;
+  const w500  = +document.getElementById('rw500').value;
+  const w1000 = +document.getElementById('rw1000').value;
+  const total = w100 + w200 + w500 + w1000;
+
+  if (total !== 100) {
+    toast(`Total is ${total}% — must equal exactly 100% before saving`, 'err');
+    return;
+  }
+
   const body = {
-    w100:  +document.getElementById('rw100').value,
-    w200:  +document.getElementById('rw200').value,
-    w500:  +document.getElementById('rw500').value,
-    w1000: +document.getElementById('rw1000').value,
+    w100, w200, w500, w1000,
     amt1:  +(document.getElementById('amt1')?.value||100),
     amt2:  +(document.getElementById('amt2')?.value||200),
     amt3:  +(document.getElementById('amt3')?.value||500),
