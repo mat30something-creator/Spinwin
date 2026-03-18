@@ -112,6 +112,24 @@ db.serialize(() => {
     created_at TEXT DEFAULT (datetime('now'))
   )`);
 
+  // Safety migrations — create any tables added after initial deploy
+  db.run(`CREATE TABLE IF NOT EXISTS salesmen (
+    id TEXT PRIMARY KEY, dealer_id TEXT NOT NULL,
+    name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT DEFAULT '',
+    active INTEGER DEFAULT 1, created_at TEXT DEFAULT (datetime('now'))
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS dealer_sessions (
+    token TEXT PRIMARY KEY, dealer_id TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+  // Add assigned_to column to leads if it doesn't exist
+  db.run(`ALTER TABLE leads ADD COLUMN assigned_to TEXT DEFAULT ''`, [], () => {});
+  // Add dashboard_pin column to dealers if it doesn't exist  
+  db.run(`ALTER TABLE dealers ADD COLUMN dashboard_pin TEXT DEFAULT ''`, [], () => {});
+  // Add branding columns if they don't exist
+  db.run(`ALTER TABLE dealers ADD COLUMN brand_color TEXT DEFAULT '#D0021B'`, [], () => {});
+  db.run(`ALTER TABLE dealers ADD COLUMN brand_logo TEXT DEFAULT ''`, [], () => {});
+
   // Seed demo dealer
   db.get('SELECT id FROM dealers WHERE id=?', ['DEALER-DEMO'], (err, row) => {
     if (!row) {
@@ -596,7 +614,9 @@ app.get('/api/admin/dealers', requireAdmin, async (req,res) => {
     res.json(await dbAll(`SELECT d.*,
       (SELECT COUNT(*) FROM leads l WHERE l.dealer_id=d.id) as lead_count,
       (SELECT COUNT(*) FROM qr_codes q WHERE q.dealer_id=d.id) as qr_count
-      FROM dealers d ORDER BY d.created_at DESC`));
+      FROM dealers d ORDER BY
+        CASE WHEN d.status='deleted' THEN 1 ELSE 0 END ASC,
+        d.created_at DESC`));
   } catch(e){res.status(500).json({error:e.message});}
 });
 app.post('/api/admin/dealers', requireAdmin, async (req,res) => {
@@ -620,7 +640,7 @@ app.delete('/api/admin/dealers/:id', requireAdmin, async (req,res) => {
   try {
     const id = req.params.id;
     if (id === 'DEALER-DEMO') return res.status(400).json({error:'Cannot delete demo dealer'});
-    await dbRun('UPDATE dealers SET active=0 WHERE id=?',[id]);
+    await dbRun("UPDATE dealers SET status='deleted', active=0 WHERE id=?",[id]);
     res.json({success:true});
   } catch(e){res.status(500).json({error:e.message});}
 });

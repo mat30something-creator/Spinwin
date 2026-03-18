@@ -84,6 +84,7 @@ td{padding:11px 14px;font-size:12px;vertical-align:middle;}
 .dot-active{background:var(--green);}
 .dot-trial{background:var(--gold);}
 .dot-inactive{background:var(--muted);}
+.dot-deleted{background:#F87171;}
 
 .ab{background:transparent;border:1px solid var(--border);border-radius:3px;padding:3px 8px;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
 .ab:hover{color:var(--text);border-color:rgba(255,255,255,.2);}
@@ -223,6 +224,7 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         <option value="active">Active</option>
         <option value="trial">Trial</option>
         <option value="inactive">Inactive</option>
+        <option value="deleted">Deleted</option>
       </select>
     </div>
 
@@ -552,13 +554,16 @@ function filterDealers() {
   );
   const tbody = document.getElementById('dealersBody');
   tbody.innerHTML = filtered.map(d=>`
-    <tr onclick="openDealerModal('${d.id}')">
+    <tr onclick="openDealerModal('${d.id}')" style="${d.status==='deleted'?'opacity:.45;text-decoration:line-through;':''}">  
       <td><div class="cell-name">${esc(d.name)}</div><div class="cell-sub">${esc(d.city)}</div></td>
       <td><div style="font-size:12px">${esc(d.contact)}</div><div class="cell-sub">${esc(d.email)}</div></td>
       <td><span class="plan-pill" style="background:rgba(245,197,24,.1);color:#F5C518;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase">${d.plan}</span></td>
       <td style="font-family:'Bebas Neue',sans-serif;font-size:18px">${d.leads}</td>
       <td style="color:var(--muted);font-size:12px">${d.qrs}</td>
-      <td><span class="status-pill"><span class="dot dot-${d.status}"></span>${d.status}</span></td>
+      <td><span class="status-pill" style="${d.status==='deleted'?'color:#F87171':''}">
+        <span class="dot" style="background:${d.status==='active'?'#22C55E':d.status==='trial'?'#F5C518':d.status==='deleted'?'#F87171':'#555'}"></span>
+        ${d.status==='deleted'?'<s>Deleted</s>':d.status}
+      </span></td>
       <td style="font-size:11px;color:var(--muted)">${fmtDate(d.joined)}</td>
       <td style="display:flex;gap:5px;flex-wrap:wrap;">
         <button class="ab green" onclick="event.stopPropagation();impersonate('${d.id}','${esc(d.name)}')">View Dashboard</button>
@@ -799,7 +804,7 @@ This will delete all their leads, QR codes, and account data. This cannot be und
     if (!res.ok) throw new Error(data.error || 'Failed');
     closeModal('dealerModal');
     await loadDealersFromAPI();
-    toast(`${name} has been deleted.`);
+    toast(`${name} marked as Deleted.`);
   } catch(e) { toast(e.message, 'err'); }
 }
 
