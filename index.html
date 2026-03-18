@@ -122,6 +122,7 @@ canvas{border-radius:50%;box-shadow:0 0 40px rgba(245,197,24,.12),0 0 80px rgba(
   <div id="form-screen">
     <div class="hero">
       <div class="eyebrow">Exclusive Vehicle Offer</div>
+      <div id="dealerNameHero" style="font-size:12px;color:var(--gold);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;min-height:16px;"></div>
       <h1>WIN UP TO $1,000 OFF</h1>
       <p>Spin the wheel for an instant savings offer on your vehicle. Scan. Enter. Win.</p>
     </div>
@@ -231,7 +232,32 @@ let isSpinning  = false;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
-  // Check local cooldown first (avoids unnecessary API call)
+  // Load dealer config FIRST so name always shows
+  try {
+    const res  = await fetch(`${API_BASE}/api/qr/${QR_ID}/config`);
+    if (!res.ok) throw new Error('QR not found');
+    const data = await res.json();
+
+    const dealerName = data.dealerName || 'Your Dealership';
+    document.getElementById('dealerTag').textContent = dealerName;
+    const heroName = document.getElementById('dealerNameHero');
+    if (heroName) heroName.textContent = dealerName;
+    document.title = `Win Up To $1,000 Off — ${dealerName}`;
+
+    if (data.plan === 'pro' && data.brandColor) {
+      document.documentElement.style.setProperty('--red', data.brandColor);
+    }
+    if (data.plan === 'pro' && data.brandLogo) {
+      const logoEl = document.getElementById('dealerLogo');
+      if (logoEl) { logoEl.src = data.brandLogo; logoEl.style.display = 'block'; }
+    }
+    prizeConfig = data.prizes;
+    window._cooldownDays = data.cooldownDays || 30;
+  } catch(e) {
+    document.getElementById('dealerTag').textContent = 'Your Dealership';
+  }
+
+  // Check local cooldown AFTER loading config
   const lock = getLocalLock();
   if (lock) {
     const elapsed = Date.now() - lock.ts;
@@ -240,34 +266,6 @@ window.addEventListener('load', async () => {
       showBlocked(Math.ceil((cooldown - elapsed) / 864e5));
       return;
     }
-  }
-
-  // Load dealer config from server
-  try {
-    const res  = await fetch(`${API_BASE}/api/qr/${QR_ID}/config`);
-    if (!res.ok) throw new Error('QR not found');
-    const data = await res.json();
-
-    // Set dealer name prominently
-    const dealerName = data.dealerName || 'Your Dealership';
-    document.getElementById('dealerTag').textContent = dealerName;
-    document.getElementById('dealerNameHero').textContent = dealerName;
-    document.title = `Win Up To $1,000 Off — ${dealerName}`;
-
-    // Apply brand color if Pro
-    if (data.plan === 'pro' && data.brandColor) {
-      document.documentElement.style.setProperty('--red', data.brandColor);
-    }
-    // Apply logo if Pro
-    if (data.plan === 'pro' && data.brandLogo) {
-      const logoEl = document.getElementById('dealerLogo');
-      if (logoEl) { logoEl.src = data.brandLogo; logoEl.style.display = 'block'; }
-    }
-
-    prizeConfig = data.prizes;
-    window._cooldownDays = data.cooldownDays || 30;
-  } catch(e) {
-    document.getElementById('dealerTag').textContent = 'Your Dealership';
   }
 
   // Phone auto-format
