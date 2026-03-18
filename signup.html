@@ -198,7 +198,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
     <a href="#pricing">Pricing</a>
     <a href="#signup">Get Started</a>
   </div>
-  <a href="#signup" class="nav-cta">Start Free Trial</a>
+  <a href="#signup" class="nav-cta">Get Started</a>
 </nav>
 
 <!-- HERO -->
@@ -412,6 +412,37 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
       <div class="submit-area">
         <button class="big-submit" id="signupBtn" onclick="handleSignup()">Create My Account →</button>
         <div class="form-note">Secure payment powered by Stripe. Cancel anytime.</div>
+        <div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);">
+          <span style="font-size:12px;color:#555;">Already have an account?</span>
+          <a href="#" onclick="showLoginForm()" style="color:#F5C518;font-size:12px;font-weight:600;margin-left:6px;text-decoration:none;">Sign In to Dashboard →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login form -->
+    <div id="loginState" style="display:none;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-family:'Instrument Serif',serif;font-size:28px;color:#fff;margin-bottom:8px;">Sign In to Your Dashboard</div>
+        <div style="font-size:13px;color:#888;">Enter your Dealer ID and PIN to access your dashboard</div>
+      </div>
+      <div style="background:#161616;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:28px;max-width:420px;margin:0 auto;">
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:6px;">Dealer ID</label>
+          <input type="text" id="loginDealerId" placeholder="e.g. PREMIER-AUTO-A1B2"
+            style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:12px 14px;color:#fff;font-size:14px;outline:none;"/>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:6px;">Dashboard PIN</label>
+          <input type="password" id="loginPin" placeholder="6-digit PIN" maxlength="6"
+            style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:12px 14px;color:#fff;font-size:18px;letter-spacing:6px;text-align:center;outline:none;"/>
+        </div>
+        <div id="loginErr" style="display:none;font-size:12px;color:#F87171;padding:10px;background:rgba(208,2,27,.1);border-radius:6px;margin-bottom:14px;"></div>
+        <button onclick="doSigninRedirect()" style="width:100%;background:#F5C518;color:#0a0a0a;border:none;border-radius:8px;padding:14px;font-weight:700;font-size:15px;cursor:pointer;">
+          Go to My Dashboard →
+        </button>
+        <div style="text-align:center;margin-top:14px;">
+          <a href="#" onclick="showSignupForm()" style="color:#888;font-size:12px;text-decoration:none;">← Back to Sign Up</a>
+        </div>
       </div>
     </div>
 
@@ -524,6 +555,41 @@ function hexToRgb(hex) {
 renderPrizeRows();
 
 // ── Scroll to signup with plan pre-selected ────────────────────────────────
+function showLoginForm() {
+  document.getElementById('signupForm').style.display = 'none';
+  document.getElementById('successState').style.display = 'none';
+  document.getElementById('loginState').style.display = 'block';
+  document.getElementById('signup').scrollIntoView({behavior:'smooth'});
+}
+
+function showSignupForm() {
+  document.getElementById('loginState').style.display = 'none';
+  document.getElementById('successState').style.display = 'none';
+  document.getElementById('signupForm').style.display = 'block';
+}
+
+async function doSigninRedirect() {
+  const dealerId = document.getElementById('loginDealerId').value.trim().toUpperCase();
+  const pin      = document.getElementById('loginPin').value.trim();
+  const errEl    = document.getElementById('loginErr');
+  if (!dealerId) { errEl.textContent='Please enter your Dealer ID'; errEl.style.display='block'; return; }
+  if (!pin)      { errEl.textContent='Please enter your PIN'; errEl.style.display='block'; return; }
+  try {
+    const res = await fetch('/api/dealer/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({dealerId, pin})
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error||'Invalid credentials'; errEl.style.display='block'; return; }
+    // Store token and redirect
+    sessionStorage.setItem('dealerToken_' + dealerId, data.token);
+    window.location.href = '/dashboard.html?dealer=' + dealerId;
+  } catch(e) {
+    errEl.textContent = 'Could not connect. Please try again.';
+    errEl.style.display = 'block';
+  }
+}
+
 function scrollToSignup(plan) {
   document.getElementById('sPlan').value = plan === 'starter' ? 'basic' : plan;
   document.getElementById('signup').scrollIntoView({behavior:'smooth'});

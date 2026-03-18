@@ -555,11 +555,11 @@ window.addEventListener('load', async () => {
 });
 
 function init() {
+  loadBranding();
   loadLeads();
   loadStats();
   loadQRCodes();
   loadSalesmen();
-  loadBranding();
 }
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
@@ -623,11 +623,91 @@ async function loadStats() {
   try {
     const stats = await apiFetch(`/api/dashboard/${DEALER_ID}/stats`);
     updateStats(stats);
-    document.getElementById('sbDealerName').textContent = 'Premier Auto Group';
   } catch(e) {
     updateStats(getDemoStats());
-    document.getElementById('sbDealerName').textContent = 'Premier Auto Group';
-    document.getElementById('sbDealerEmail').textContent = '';
+  }
+}
+
+async function loadBranding() {
+  try {
+    const data = await apiFetch(`/api/dashboard/${DEALER_ID}/branding`);
+    window._dealerPlan = data.plan || 'basic';
+    window._dealerName = data.name || 'Your Dealership';
+    document.getElementById('sbDealerName').textContent = data.name || 'Your Dealership';
+
+    // Apply plan gating
+    const isPro = (data.plan === 'pro');
+    applyPlanGating(isPro);
+
+    // Apply brand color if Pro
+    if (isPro && data.brand_color) {
+      document.documentElement.style.setProperty('--red', data.brand_color);
+    }
+    if (data.brand_color && document.getElementById('brandColorInput')) {
+      document.getElementById('brandColorInput').value = data.brand_color;
+    }
+    if (data.brand_logo && document.getElementById('brandLogoInput')) {
+      document.getElementById('brandLogoInput').value = data.brand_logo;
+    }
+  } catch(e) {
+    window._dealerPlan = 'basic';
+    applyPlanGating(false);
+  }
+}
+
+function applyPlanGating(isPro) {
+  // Hide salesmen nav for basic
+  const salesmenNav = document.getElementById('salesmenNav');
+  if (salesmenNav) salesmenNav.style.display = isPro ? '' : 'none';
+
+  // Hide analytics tab for basic - replace with upgrade prompt
+  if (!isPro) {
+    const analyticsTab = document.getElementById('tab-analytics');
+    if (analyticsTab) {
+      analyticsTab.innerHTML = `
+        <div style="text-align:center;padding:80px 40px;">
+          <div style="font-size:48px;margin-bottom:16px;">📊</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;margin-bottom:10px">Advanced Analytics</div>
+          <div style="font-size:14px;color:var(--muted);max-width:380px;margin:0 auto 28px;line-height:1.6">
+            Unlock conversion rates, salesman performance, QR breakdown charts and more with the Pro plan.
+          </div>
+          <button class="btn btn-gold" style="padding:14px 32px;font-size:15px" onclick="upgradeToPro()">
+            ⭐ Upgrade to Pro — $399/mo
+          </button>
+        </div>`;
+    }
+  }
+
+  // Hide branding & SMS cards for basic
+  const brandingCard = document.getElementById('brandingCard');
+  const smsCard      = document.getElementById('smsCard');
+  if (!isPro) {
+    if (brandingCard) {
+      brandingCard.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="set-ttl">Custom Branding <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
+            <div class="set-sub" style="margin-top:4px">Custom colors, logo, and multiple notification emails. Available on Pro plan.</div>
+          </div>
+          <button class="btn btn-gold" onclick="upgradeToPro()">Upgrade →</button>
+        </div>`;
+    }
+    if (smsCard) {
+      smsCard.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="set-ttl">SMS Alerts <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
+            <div class="set-sub" style="margin-top:4px">Get a text the moment a new lead scans. Available on Pro plan.</div>
+          </div>
+          <button class="btn btn-gold" onclick="upgradeToPro()">Upgrade →</button>
+        </div>`;
+    }
+  }
+
+  // Show upgrade banner in sidebar for basic
+  const sbFoot = document.querySelector('.sb-foot');
+  if (sbFoot && !isPro) {
+    sbFoot.innerHTML += `<button onclick="upgradeToPro()" style="width:100%;margin-top:10px;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.3);border-radius:6px;padding:8px;font-size:11px;color:#F5C518;cursor:pointer;font-weight:700;">⭐ Upgrade to Pro</button>`;
   }
 }
 

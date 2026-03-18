@@ -111,7 +111,10 @@ canvas{border-radius:50%;box-shadow:0 0 40px rgba(245,197,24,.12),0 0 80px rgba(
 
   <!-- Header -->
   <div class="header">
-    <div class="logo">⚡ SPIN &amp; WIN</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <img id="dealerLogo" style="display:none;height:32px;width:auto;border-radius:4px;object-fit:contain;" alt="Dealer Logo"/>
+      <div class="logo">⚡ SPIN &amp; WIN</div>
+    </div>
     <div class="dealer-tag" id="dealerTag">Loading…</div>
   </div>
 
@@ -244,8 +247,23 @@ window.addEventListener('load', async () => {
     const res  = await fetch(`${API_BASE}/api/qr/${QR_ID}/config`);
     if (!res.ok) throw new Error('QR not found');
     const data = await res.json();
-    document.getElementById('dealerTag').textContent = data.dealerName || 'Your Dealership';
-    document.title = `Win Up To $1,000 Off — ${data.dealerName}`;
+
+    // Set dealer name prominently
+    const dealerName = data.dealerName || 'Your Dealership';
+    document.getElementById('dealerTag').textContent = dealerName;
+    document.getElementById('dealerNameHero').textContent = dealerName;
+    document.title = `Win Up To $1,000 Off — ${dealerName}`;
+
+    // Apply brand color if Pro
+    if (data.plan === 'pro' && data.brandColor) {
+      document.documentElement.style.setProperty('--red', data.brandColor);
+    }
+    // Apply logo if Pro
+    if (data.plan === 'pro' && data.brandLogo) {
+      const logoEl = document.getElementById('dealerLogo');
+      if (logoEl) { logoEl.src = data.brandLogo; logoEl.style.display = 'block'; }
+    }
+
     prizeConfig = data.prizes;
     window._cooldownDays = data.cooldownDays || 30;
   } catch(e) {

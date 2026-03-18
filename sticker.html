@@ -292,7 +292,7 @@ const BASE_URL  = location.origin;
 
 let prizes   = [{label:'$100'},{label:'$200'},{label:'$500'},{label:'$1,000'}];
 let topPrize = '$1,000';
-let dealerName = params.get('name') || 'Your Dealership';
+let dealerName = params.get('name') || params.get('dealer') || 'Your Dealership';
 
 async function loadConfig() {
   try {
@@ -301,6 +301,7 @@ async function loadConfig() {
     const data = await res.json();
     dealerName = data.dealerName || dealerName;
     document.getElementById('ctrlDealer').value = dealerName;
+    document.getElementById('ctrlDealer').placeholder = dealerName;
     const p = data.prizes;
     const amounts = [p.amt1||100, p.amt2||200, p.amt3||500, p.amt4||1000];
     prizes = amounts.map(a => ({ label: '$' + Number(a).toLocaleString() }));

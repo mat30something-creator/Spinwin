@@ -343,6 +343,9 @@ app.post('/api/dealer/login', rateLimit(10, 60000), async (req,res) => {
     const {dealerId, pin} = req.body;
     if(!dealerId||!pin) return res.status(400).json({error:'Dealer ID and PIN required'});
     const dealer = await dbGet('SELECT * FROM dealers WHERE id=? AND active=1',[dealerId]);
+    if (dealer && (dealer.status === 'deleted' || dealer.status === 'inactive')) {
+      return res.status(403).json({error:'This account has been suspended. Please contact support.'});
+    }
     if(!dealer) return res.status(404).json({error:'Dealer not found'});
     const pinHash = hashPin(pin);
     if(dealer.dashboard_pin !== pinHash) return res.status(401).json({error:'Incorrect PIN'});
@@ -361,7 +364,7 @@ app.get('/api/qr/:qrId/config', rateLimit(60, 60000), async (req,res) => {
       p.amt1,p.amt2,p.amt3,p.amt4,p.cooldown_days,p.offer_hours
       FROM qr_codes q JOIN dealers d ON d.id=q.dealer_id
       JOIN prize_config p ON p.dealer_id=d.id
-      WHERE q.id=? AND q.active=1 AND d.active=1`,[req.params.qrId]);
+      WHERE q.id=? AND q.active=1 AND d.active=1 AND d.status NOT IN ('deleted','inactive')`,[req.params.qrId]);
     if(!qr) return res.status(404).json({error:'QR not found'});
     res.json({
       qrId:qr.id, dealerId:qr.dealer_id, dealerName:qr.dealer_name,
@@ -380,6 +383,9 @@ app.post('/api/leads', rateLimit(30, 60000), async (req,res) => {
     const {qrId,dealerId,name,email,phone,stock,deviceFingerprint}=req.body;
     if(!qrId||!dealerId||!name||!email||!phone) return res.status(400).json({error:'Missing fields'});
     const dealer = await dbGet('SELECT * FROM dealers WHERE id=? AND active=1',[dealerId]);
+    if (dealer && (dealer.status === 'deleted' || dealer.status === 'inactive')) {
+      return res.status(403).json({error:'This account has been suspended. Please contact support.'});
+    }
     if(!dealer) return res.status(404).json({error:'Dealer not found'});
     const config = await dbGet('SELECT * FROM prize_config WHERE dealer_id=?',[dealerId]);
     const ip=req.headers['x-forwarded-for']?.split(',')[0]?.trim()||req.socket.remoteAddress||'';
