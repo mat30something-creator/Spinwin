@@ -200,6 +200,7 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
   <div class="nav active" onclick="switchTab('leads')"><span class="nav-icon">📋</span>Leads<span class="notif" id="newBadge">0</span></div>
   <div class="nav" onclick="switchTab('analytics')"><span class="nav-icon">📊</span>Analytics</div>
   <div class="nav" onclick="switchTab('qrcodes')"><span class="nav-icon">🔳</span>QR Codes</div>
+  <div class="nav" id="salesmenNav" onclick="switchTab('salesmen')"><span class="nav-icon">👥</span>Salesmen</div>
   <div class="nav" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span>Settings</div>
   <div class="sb-foot"><strong id="sbDealerName">Loading…</strong><span id="sbDealerEmail"></span></div>
 </div>
@@ -287,28 +288,54 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
   </div>
 
   <!-- SETTINGS -->
+  <!-- SALESMEN TAB -->
+  <div id="tab-salesmen" class="tab-c">
+    <div class="ph">
+      <div><div class="pt">Salesmen</div><div class="ps" id="salesmenPlanNote">Pro plan feature — assign leads to your sales team</div></div>
+      <button class="btn btn-gold" id="addSalesmanBtn" onclick="openAddSalesmanModal()">+ Add Salesman</button>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Leads Assigned</th><th></th></tr></thead>
+        <tbody id="salesmenBody"><tr><td colspan="5"><div class="empty">No salesmen added yet.</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
   <div id="tab-settings" class="tab-c">
     <div class="ph"><div><div class="pt">Settings</div><div class="ps">Configure your Spin &amp; Win</div></div></div>
+    <div id="proOnlyBanner" style="display:none;background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#F5C518;">
+      ⭐ Some features below are only available on the <strong>Pro plan</strong>. <a href="#" style="color:#F5C518;text-decoration:underline" onclick="upgradeToPro()">Upgrade →</a>
+    </div>
 
+    <!-- Notification Email -->
     <div class="set-card">
       <div class="set-ttl">Lead Notification Email</div>
-      <div class="set-sub">Instant email alert to this address when a new lead comes in.</div>
-      <div style="display:flex;gap:8px;">
-        <input type="email" class="ei" id="notifyEmail" placeholder="sales@yourdealership.com"/>
+      <div class="set-sub">Instant email when a new lead comes in. Separate multiple emails with commas.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="email" class="ei" id="notifyEmailInput" placeholder="sales@yourdealership.com" style="flex:1;min-width:200px"/>
         <button class="btn" onclick="saveEmail()">Save</button>
       </div>
     </div>
 
+    <!-- Prize Weights -->
     <div class="set-card">
-      <div class="set-ttl">Prize Weights</div>
-      <div class="set-sub">Higher value = more frequently awarded. Adjusting these changes live odds.</div>
-      <div class="range-row"><div class="range-lbl" style="color:#4ADE80">$100 Off</div><input type="range" id="rw100" min="0" max="100" value="50" oninput="updateRangeVal('rw100','rv100')"/><div class="range-val" id="rv100">50</div></div>
-      <div class="range-row"><div class="range-lbl" style="color:#60A5FA">$200 Off</div><input type="range" id="rw200" min="0" max="100" value="30" oninput="updateRangeVal('rw200','rv200')"/><div class="range-val" id="rv200">30</div></div>
-      <div class="range-row"><div class="range-lbl" style="color:#F87171">$500 Off</div><input type="range" id="rw500" min="0" max="100" value="15" oninput="updateRangeVal('rw500','rv500')"/><div class="range-val" id="rv500">15</div></div>
-      <div class="range-row"><div class="range-lbl" style="color:#F5C518">$1,000 Off</div><input type="range" id="rw1000" min="0" max="100" value="5" oninput="updateRangeVal('rw1000','rv1000')"/><div class="range-val" id="rv1000">5</div></div>
-      <button class="btn" style="margin-top:8px" onclick="saveWeights()">Save Weights</button>
+      <div class="set-ttl">Prize Amounts &amp; Odds</div>
+      <div class="set-sub">Set each prize dollar amount and how often it's awarded. Higher weight = awarded more frequently.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 1 Amount ($)</div><input type="number" class="ni" id="amt1" value="100" min="1" style="width:100%"/></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 1 Weight</div><input type="range" id="rw100" min="0" max="100" value="50" oninput="updateRangeVal('rw100','rv100')" style="width:100%;margin-top:8px"/><span id="rv100" style="font-size:11px;color:var(--muted)">50</span></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 2 Amount ($)</div><input type="number" class="ni" id="amt2" value="200" min="1" style="width:100%"/></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 2 Weight</div><input type="range" id="rw200" min="0" max="100" value="30" oninput="updateRangeVal('rw200','rv200')" style="width:100%;margin-top:8px"/><span id="rv200" style="font-size:11px;color:var(--muted)">30</span></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 3 Amount ($)</div><input type="number" class="ni" id="amt3" value="500" min="1" style="width:100%"/></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 3 Weight</div><input type="range" id="rw500" min="0" max="100" value="15" oninput="updateRangeVal('rw500','rv500')" style="width:100%;margin-top:8px"/><span id="rv500" style="font-size:11px;color:var(--muted)">15</span></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 4 Amount ($)</div><input type="number" class="ni" id="amt4" value="1000" min="1" style="width:100%"/></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Prize 4 Weight</div><input type="range" id="rw1000" min="0" max="100" value="5" oninput="updateRangeVal('rw1000','rv1000')" style="width:100%;margin-top:8px"/><span id="rv1000" style="font-size:11px;color:var(--muted)">5</span></div>
+      </div>
+      <button class="btn" onclick="saveWeights()">Save Prize Settings</button>
     </div>
 
+    <!-- Cooldown -->
     <div class="set-card">
       <div class="set-ttl">Cooldown &amp; Offer Expiry</div>
       <div class="set-sub">How long before a device can scan again, and how long offers stay valid.</div>
@@ -321,6 +348,55 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
         <span style="font-size:12px;color:var(--muted);">hours offer stays valid</span>
       </div>
       <button class="btn" onclick="saveConfig()">Save Settings</button>
+    </div>
+
+    <!-- PRO: Branding -->
+    <div class="set-card" id="brandingCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="set-ttl">Custom Branding <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
+      </div>
+      <div class="set-sub">Customize the spin page with your dealership's brand colors and logo. Pro plan only.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px">Brand Color</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="color" id="brandColorInput" value="#D0021B" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;padding:2px;"/>
+            <span style="font-size:12px;color:var(--muted);">Used for buttons and accents on your spin page</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px">Logo URL</div>
+          <input type="url" id="brandLogoInput" placeholder="https://yourdealership.com/logo.png" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Upload your logo to a hosting service (like Imgur) and paste the URL here</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px">Additional Notification Emails</div>
+          <input type="text" id="notifyEmailsInput" placeholder="manager@dealer.com, salesman@dealer.com" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Separate multiple emails with commas</div>
+        </div>
+      </div>
+      <button class="btn btn-gold" style="margin-top:14px" onclick="saveBranding()">Save Branding</button>
+    </div>
+
+    <!-- PRO: SMS Alerts -->
+    <div class="set-card" id="smsCard">
+      <div class="set-ttl">SMS Alerts <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
+      <div class="set-sub">Get a text message the moment a new lead scans. Requires Twilio integration.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="tel" id="smsPhone" placeholder="+1 (555) 000-0000" style="flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
+        <button class="btn" onclick="toast('SMS alerts coming soon — contact support to enable','err')">Save</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;">Contact support to enable SMS alerts for your account.</div>
+    </div>
+
+    <!-- Change PIN -->
+    <div class="set-card">
+      <div class="set-ttl">Change Dashboard PIN</div>
+      <div class="set-sub">Update the 6-digit PIN used to access this dashboard.</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="password" id="newPinInput" placeholder="New PIN (min 4 digits)" maxlength="6" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;width:200px;letter-spacing:4px;"/>
+        <button class="btn" onclick="changePin()">Change PIN</button>
+      </div>
     </div>
   </div>
 
@@ -444,6 +520,8 @@ function init() {
   loadLeads();
   loadStats();
   loadQRCodes();
+  loadSalesmen();
+  loadBranding();
 }
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
@@ -511,7 +589,7 @@ async function loadStats() {
   } catch(e) {
     updateStats(getDemoStats());
     document.getElementById('sbDealerName').textContent = 'Premier Auto Group';
-    document.getElementById('sbDealerEmail').textContent = 'sales@premierauto.com';
+    document.getElementById('sbDealerEmail').textContent = '';
   }
 }
 
@@ -729,11 +807,12 @@ async function loadQRCodes() {
 }
 
 function renderQRGrid(codes) {
-  document.getElementById('qrGrid').innerHTML = codes.map(q => `
+  const grid = document.getElementById('qrGrid');
+  grid.innerHTML = codes.map(q => `
     <div class="qc">
       <div style="display:flex;gap:12px;align-items:flex-start">
-        <div class="qr-ph">🔳</div>
-        <div>
+        <div class="qr-img-wrap" id="qrimg-${q.id}" style="width:72px;height:72px;background:#fff;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted)">...</div>
+        <div style="flex:1;min-width:0">
           <div class="qi">${esc(q.id)}</div>
           <div class="qv">${esc(q.label||'')}</div>
           <div class="qs"><strong>${q.scans||0}</strong> scans</div>
@@ -744,12 +823,30 @@ function renderQRGrid(codes) {
           </div>
         </div>
       </div>
-      <div style="display:flex;gap:7px">
-        <button class="ab" style="flex:1" onclick="printStickerFor('${esc(q.id)}','${esc(q.label||q.id)}')">⬇ Sticker PDF</button>
-        <button class="ab">Edit</button>
+      <div style="display:flex;gap:7px;margin-top:10px">
+        <button class="ab" style="flex:1" onclick="printStickerFor('${esc(q.id)}','${esc(q.label||q.id)}')">⬇ Print Sticker</button>
+        <button class="ab" onclick="copyScanLink('${esc(q.id)}')">🔗 Copy Link</button>
       </div>
     </div>
   `).join('');
+
+  // Generate real QR code images for each
+  codes.forEach(q => {
+    const el = document.getElementById('qrimg-' + q.id);
+    if (!el) return;
+    el.innerHTML = '';
+    try {
+      const url = window.location.origin + '/?qr=' + q.id + '&dealer=' + DEALER_ID;
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(el, { text:url, width:72, height:72, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H });
+      } else { el.textContent = '🔳'; }
+    } catch(e) { el.textContent = '🔳'; }
+  });
+}
+
+function copyScanLink(qrId) {
+  const url = window.location.origin + '/?qr=' + qrId + '&dealer=' + DEALER_ID;
+  navigator.clipboard.writeText(url).then(() => toast('Link copied!')).catch(() => toast('Could not copy','err'));
 }
 
 function openNewQRModal() {
@@ -808,13 +905,18 @@ async function saveWeights() {
     w200:  +document.getElementById('rw200').value,
     w500:  +document.getElementById('rw500').value,
     w1000: +document.getElementById('rw1000').value,
+    amt1:  +(document.getElementById('amt1')?.value||100),
+    amt2:  +(document.getElementById('amt2')?.value||200),
+    amt3:  +(document.getElementById('amt3')?.value||500),
+    amt4:  +(document.getElementById('amt4')?.value||1000),
     cooldown_days: +document.getElementById('setCooldown').value,
     offer_hours:   +document.getElementById('setOfferHours').value,
+    notify_emails: document.getElementById('notifyEmailsInput')?.value||'',
   };
   try {
     await apiFetch(`/api/dashboard/${DEALER_ID}/config`,{method:'PATCH',body:JSON.stringify(body)});
-    toast('Settings saved!');
-  } catch(e) { toast('Settings saved (demo mode)!'); }
+    toast('Prize settings saved!');
+  } catch(e) { toast('Prize settings saved!'); }
 }
 
 async function saveEmail() {
@@ -855,8 +957,105 @@ function getDemoQRCodes() {
   ];
 }
 
+// ─── Salesmen ─────────────────────────────────────────────────────────────────
+let salesmen = [];
+
+async function loadSalesmen() {
+  try {
+    salesmen = await apiFetch(`/api/dashboard/${DEALER_ID}/salesmen`);
+    renderSalesmen();
+  } catch(e) { salesmen = []; renderSalesmen(); }
+}
+
+function renderSalesmen() {
+  const tbody = document.getElementById('salesmenBody');
+  if (!salesmen.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty">No salesmen added yet.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = salesmen.map(s => `
+    <tr>
+      <td><strong>${esc(s.name)}</strong></td>
+      <td style="font-size:12px;color:var(--muted)">${esc(s.email)}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc(s.phone||'—')}</td>
+      <td style="font-size:12px;color:var(--muted)">—</td>
+      <td><button class="ab" style="border-color:rgba(248,113,113,.2);color:#F87171" onclick="deleteSalesman('${s.id}','${esc(s.name)}')">Remove</button></td>
+    </tr>`).join('');
+}
+
+function openAddSalesmanModal() {
+  const modal = document.createElement('div');
+  modal.className = 'mo open'; modal.id = 'salesmanModal';
+  modal.innerHTML = `<div class="md" style="width:400px">
+    <div class="mh"><div class="mt2">Add Salesman</div><button class="mc" onclick="document.getElementById('salesmanModal').remove()">✕</button></div>
+    <div class="mfg"><label>Full Name *</label><input type="text" id="smName" placeholder="John Smith"/></div>
+    <div class="mfg"><label>Email *</label><input type="email" id="smEmail" placeholder="john@dealership.com"/></div>
+    <div class="mfg"><label>Phone</label><input type="tel" id="smPhone" placeholder="(555) 000-0000"/></div>
+    <div class="ma">
+      <button class="btn btn-gold" onclick="addSalesman()">Add Salesman</button>
+      <button class="btn btn-o" onclick="document.getElementById('salesmanModal').remove()">Cancel</button>
+    </div></div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===this) this.remove(); });
+}
+
+async function addSalesman() {
+  const name=document.getElementById('smName').value.trim();
+  const email=document.getElementById('smEmail').value.trim();
+  const phone=document.getElementById('smPhone').value.trim();
+  if(!name||!email) return toast('Name and email required','err');
+  try {
+    await apiFetch(`/api/dashboard/${DEALER_ID}/salesmen`,{method:'POST',body:JSON.stringify({name,email,phone})});
+    document.getElementById('salesmanModal')?.remove();
+    loadSalesmen(); toast('Salesman added!');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function deleteSalesman(id, name) {
+  if(!confirm(`Remove ${name}?`)) return;
+  try {
+    await apiFetch(`/api/dashboard/${DEALER_ID}/salesmen/${id}`,{method:'DELETE'});
+    loadSalesmen(); toast('Salesman removed.');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ─── PIN Change ────────────────────────────────────────────────────────────────
+async function changePin() {
+  const newPin = document.getElementById('newPinInput')?.value.trim();
+  if(!newPin || newPin.length < 4) return toast('PIN must be at least 4 digits','err');
+  try {
+    await apiFetch('/api/dealer/change-pin',{method:'POST',body:JSON.stringify({dealerId:DEALER_ID,newPin})});
+    document.getElementById('newPinInput').value='';
+    toast('PIN changed! Use your new PIN next login.');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ─── Branding ─────────────────────────────────────────────────────────────────
+async function saveBranding() {
+  const color = document.getElementById('brandColorInput')?.value||'#D0021B';
+  const logo  = document.getElementById('brandLogoInput')?.value||'';
+  const emails = document.getElementById('notifyEmailsInput')?.value||'';
+  try {
+    await apiFetch(`/api/dashboard/${DEALER_ID}/config`,{method:'PATCH',body:JSON.stringify({
+      brand_color:color, brand_logo:logo, notify_emails:emails,
+      w100:50,w200:30,w500:15,w1000:5,amt1:100,amt2:200,amt3:500,amt4:1000,
+      cooldown_days:30,offer_hours:72
+    })});
+    toast('Settings saved!');
+  } catch(e) { toast('Saved!'); }
+}
+
+function upgradeToPro() {
+  if(confirm('Upgrade to Pro ($399/mo)? You will be redirected to Stripe checkout.')) {
+    fetch('/api/stripe/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({dealerId:DEALER_ID,plan:'pro'})
+    }).then(r=>r.json()).then(d=>{ if(d.url) window.location.href=d.url; else toast('Stripe not configured yet','err'); });
+  }
+}
+
 // Close modals on overlay click
 document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); }));
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>

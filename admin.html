@@ -618,6 +618,7 @@ function openDealerModal(id) {
     <button class="btn btn-o" onclick="resetDealerPin('${id}','${esc(d.name)}')">🔑 Reset PIN</button>
     <button class="btn btn-o" onclick="closeModal('dealerModal')">Cancel</button>
     <button class="btn ab red" style="margin-left:auto" onclick="suspendDealer('${id}')">Suspend</button>
+    <button class="btn" style="background:rgba(208,2,27,.15);color:#F87171;border:1px solid rgba(208,2,27,.3)" onclick="deleteDealer('${id}','${esc(d.name)}')">🗑 Delete</button>
   `;
 
   document.getElementById('dealerModal').classList.add('open');
@@ -782,6 +783,24 @@ function exportAllLeads() {
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='all-leads.csv'; a.click();
+}
+
+async function deleteDealer(id, name) {
+  if (!confirm(`PERMANENTLY DELETE "${name}"?
+
+This will delete all their leads, QR codes, and account data. This cannot be undone!`)) return;
+  if (!confirm(`Are you absolutely sure you want to delete ${name}? Type OK to confirm.`)) return;
+  try {
+    const res = await fetch(`/api/admin/dealers/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken') }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    closeModal('dealerModal');
+    await loadDealersFromAPI();
+    toast(`${name} has been deleted.`);
+  } catch(e) { toast(e.message, 'err'); }
 }
 
 async function resetDealerPin(id, name) {

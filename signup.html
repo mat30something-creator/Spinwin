@@ -386,7 +386,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
 
       <div class="submit-area">
         <button class="big-submit" id="signupBtn" onclick="handleSignup()">Create My Account →</button>
-        <div class="form-note">No credit card required for your 30-day free trial.</div>
+        <div class="form-note">Secure payment powered by Stripe. Cancel anytime.</div>
       </div>
     </div>
 
@@ -521,23 +521,21 @@ async function handleSignup() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error||'Server error');
 
-    // Show success
-    document.getElementById('newDealerId').textContent = data.dealerId;
-    document.getElementById('dashLink').href   = `/dashboard.html?dealer=${data.dealerId}`;
-    document.getElementById('spinLink').href   = `/?qr=${data.firstQrId}&dealer=${data.dealerId}`;
-    document.getElementById('stickerLink').href= `/sticker.html?qr=${data.firstQrId}&dealer=${data.dealerId}&name=${encodeURIComponent(name)}`;
-    document.getElementById('signupForm').style.display='none';
-    document.getElementById('successState').style.display='block';
+    if (data.checkoutUrl) {
+      // Redirect to Stripe payment immediately
+      window.location.href = data.checkoutUrl;
+    } else {
+      // Stripe not configured — show success with links
+      document.getElementById('newDealerId').textContent = data.dealerId;
+      document.getElementById('dashLink').href   = `/dashboard.html?dealer=${data.dealerId}`;
+      document.getElementById('spinLink').href   = `/?qr=${data.firstQrId}&dealer=${data.dealerId}`;
+      document.getElementById('stickerLink').href= `/sticker.html?qr=${data.firstQrId}&dealer=${data.dealerId}&name=${encodeURIComponent(name)}`;
+      document.getElementById('signupForm').style.display='none';
+      document.getElementById('successState').style.display='block';
+    }
   } catch(e) {
-    // Demo mode — simulate success
-    const demoId = 'DEALER-' + Math.random().toString(36).slice(2,8).toUpperCase();
-    const demoQr = 'QR-LOT-001';
-    document.getElementById('newDealerId').textContent = demoId;
-    document.getElementById('dashLink').href   = `/dashboard.html?dealer=${demoId}`;
-    document.getElementById('spinLink').href   = `/?qr=${demoQr}&dealer=${demoId}`;
-    document.getElementById('stickerLink').href= `/sticker.html?qr=${demoQr}&dealer=${demoId}&name=${encodeURIComponent(name)}`;
-    document.getElementById('signupForm').style.display='none';
-    document.getElementById('successState').style.display='block';
+    toast('Something went wrong. Please try again.','err');
+    btn.disabled=false; btn.textContent='Create My Account →';
   }
 }
 </script>

@@ -86,7 +86,7 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS leads (
     id TEXT PRIMARY KEY, dealer_id TEXT NOT NULL, qr_id TEXT NOT NULL,
     name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL,
-    stock TEXT, prize TEXT NOT NULL, code TEXT UNIQUE NOT NULL,
+    stock TEXT, prize TEXT NOT NULL, code TEXT UNIQUE NOT NULL, assigned_to TEXT DEFAULT '',
     redeemed INTEGER DEFAULT 0, status TEXT DEFAULT 'New',
     device_hash TEXT, ip_hash TEXT,
     created_at TEXT DEFAULT (datetime('now')), expires_at TEXT
@@ -186,6 +186,35 @@ async function sendWelcomeEmail(dealer, pin, firstQrId) {
   });
 }
 
+async function sendCustomerEmail({name, email, prize, code, expiresAt, dealerName, stock}) {
+  if (!process.env.SMTP_USER) return;
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  await transporter.sendMail({
+    from: `"${dealerName} via Spin & Win" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `🎉 You won ${prize} OFF at ${dealerName}!`,
+    html: `<div style="font-family:sans-serif;max-width:520px;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;margin:0 auto;">
+      <h2 style="color:#F5C518;margin-bottom:4px">🎉 Congratulations, ${name}!</h2>
+      <p style="color:#888;margin-bottom:24px">You just won an exclusive discount at ${dealerName}.</p>
+      <div style="background:#1A3A2A;border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:24px;text-align:center;margin-bottom:20px;">
+        <div style="color:#4ADE80;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Your Prize</div>
+        <div style="font-size:52px;font-weight:900;color:#fff;line-height:1">${prize} OFF</div>
+        <div style="color:#555;font-size:12px;margin-top:8px">${stock ? 'On: ' + stock : 'On your vehicle purchase'}</div>
+      </div>
+      <div style="background:#1a1a1a;border:1px dashed rgba(245,197,24,.3);border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;">
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Your Redemption Code</div>
+        <div style="font-size:28px;font-weight:900;color:#F5C518;letter-spacing:4px">${code}</div>
+        <div style="font-size:11px;color:#555;margin-top:6px">Valid until ${new Date(expiresAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
+      </div>
+      <div style="background:#161616;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:16px;font-size:13px;color:#888;">
+        <strong style="color:#ccc">How to redeem:</strong><br/>
+        Show this email or your redemption code to a sales representative at ${dealerName} to apply your discount.
+      </div>
+      <p style="font-size:10px;color:#444;margin-top:20px;text-align:center">This offer expires in 72 hours · ${dealerName}</p>
+    </div>`
+  });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function hashString(str) { return crypto.createHash('sha256').update(str).digest('hex').slice(0,32); }
 function hashPin(pin) { return crypto.createHash('sha256').update(pin + 'spinwin_salt').digest('hex'); }
@@ -237,6 +266,44 @@ function requireDealer(req,res,next){
 }
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
+
+// ─── SALESMEN APIs ────────────────────────────────────────────────────────────
+app.get('/api/dashboard/:d/salesmen', requireDealer, async (req,res) => {
+  try { res.json(await dbAll('SELECT * FROM salesmen WHERE dealer_id=? AND active=1 ORDER BY name',[req.params.d])); }
+  catch(e){res.status(500).json({error:e.message});}
+});
+app.post('/api/dashboard/:d/salesmen', requireDealer, async (req,res) => {
+  try {
+    const {name,email,phone}=req.body;
+    if(!name||!email) return res.status(400).json({error:'Name and email required'});
+    const id=uuidv4();
+    await dbRun('INSERT INTO salesmen (id,dealer_id,name,email,phone) VALUES (?,?,?,?,?)',[id,req.params.d,name,email,phone||'']);
+    res.json({success:true,id});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+app.delete('/api/dashboard/:d/salesmen/:sid', requireDealer, async (req,res) => {
+  try {
+    await dbRun('UPDATE salesmen SET active=0 WHERE id=? AND dealer_id=?',[req.params.sid,req.params.d]);
+    res.json({success:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+app.patch('/api/dashboard/leads/:id/assign', async (req,res) => {
+  try {
+    const {salesmanId}=req.body;
+    await dbRun('UPDATE leads SET assigned_to=? WHERE id=?',[salesmanId||'',req.params.id]);
+    res.json({success:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
+// ─── DEALER PIN CHANGE ────────────────────────────────────────────────────────
+app.post('/api/dealer/change-pin', requireDealer, async (req,res) => {
+  try {
+    const {dealerId,newPin}=req.body;
+    if(!newPin||newPin.length<4) return res.status(400).json({error:'PIN must be at least 4 digits'});
+    await dbRun('UPDATE dealers SET dashboard_pin=? WHERE id=?',[hashPin(newPin),dealerId]);
+    res.json({success:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
 
 // Admin login
 app.post('/api/admin/login', rateLimit(10, 60000), async (req,res) => {
@@ -312,6 +379,7 @@ app.post('/api/leads', rateLimit(30, 60000), async (req,res) => {
     await dbRun(`INSERT OR REPLACE INTO spin_locks (device_hash,dealer_id,spun_at) VALUES (?,?,datetime('now'))`,[deviceHash,dealerId]);
     await dbRun('UPDATE qr_codes SET scans=scans+1 WHERE id=?',[qrId]);
     sendLeadEmail(dealer,{name,email,phone,stock,prize,code,qr_id:qrId,expires_at:expiresAt},config).catch(e=>console.error('[Email]',e.message));
+    sendCustomerEmail({name,email,prize,code,expiresAt,dealerName:dealer.name,stock}).catch(e=>console.error('[Customer Email]',e.message));
     res.json({success:true,prize,code,expiresAt});
   } catch(e){res.status(500).json({error:e.message});}
 });
@@ -392,7 +460,9 @@ app.post('/api/dealers/signup', rateLimit(5, 60000), async (req,res) => {
   try {
     const {name,contact,email,phone,city,plan,prizes}=req.body;
     if(!name||!email) return res.status(400).json({error:'Name and email required'});
-    const dealerId='DEALER-'+crypto.randomBytes(4).toString('hex').toUpperCase();
+    // Generate dealer ID from their name e.g. PREMIER-AUTO-A1B2
+    const nameSlug = (name||'DEALER').toUpperCase().replace(/[^A-Z0-9]/g,' ').trim().split(/\s+/).slice(0,2).join('-');
+    const dealerId = nameSlug + '-' + crypto.randomBytes(2).toString('hex').toUpperCase();
     const firstQrId='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
     const pin = generatePin();
     const pinHash = hashPin(pin);
@@ -412,7 +482,29 @@ app.post('/api/dealers/signup', rateLimit(5, 60000), async (req,res) => {
         html:`<p><strong>${name}</strong><br/>${email}<br/>Plan: ${plan}<br/>ID: ${dealerId}</p>`
       }).catch(()=>{});
     }
-    res.json({success:true,dealerId,firstQrId});
+    // Create Stripe checkout session immediately
+    let checkoutUrl = null;
+    try {
+      const priceId = STRIPE_PRICES[plan||'basic'];
+      if (priceId && process.env.STRIPE_SECRET_KEY) {
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        let customerId;
+        const customer = await stripe.customers.create({email,name,metadata:{dealerId}});
+        customerId = customer.id;
+        await dbRun('UPDATE dealers SET stripe_customer=? WHERE id=?',[customerId,dealerId]);
+        const session = await stripe.checkout.sessions.create({
+          customer: customerId,
+          payment_method_types:['card'],
+          line_items:[{price:priceId,quantity:1}],
+          mode:'subscription',
+          success_url:`${baseUrl}/dashboard.html?dealer=${dealerId}&subscribed=1`,
+          cancel_url:`${baseUrl}/signup.html?cancelled=1`,
+          metadata:{dealerId,plan:plan||'basic'}
+        });
+        checkoutUrl = session.url;
+      }
+    } catch(e) { console.error('[Stripe Checkout]',e.message); }
+    res.json({success:true,dealerId,firstQrId,checkoutUrl});
   } catch(e){res.status(500).json({error:e.message});}
 });
 
@@ -511,7 +603,9 @@ app.post('/api/admin/dealers', requireAdmin, async (req,res) => {
   try {
     const {name,email,phone,plan,contact,city}=req.body;
     if(!name||!email) return res.status(400).json({error:'Name and email required'});
-    const dealerId='DEALER-'+crypto.randomBytes(4).toString('hex').toUpperCase();
+    // Generate dealer ID from their name e.g. PREMIER-AUTO-A1B2
+    const nameSlug = (name||'DEALER').toUpperCase().replace(/[^A-Z0-9]/g,' ').trim().split(/\s+/).slice(0,2).join('-');
+    const dealerId = nameSlug + '-' + crypto.randomBytes(2).toString('hex').toUpperCase();
     const firstQrId='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
     const pin = generatePin();
     const pinHash = hashPin(pin);
@@ -522,6 +616,15 @@ app.post('/api/admin/dealers', requireAdmin, async (req,res) => {
     res.json({success:true,dealerId,firstQrId,pin});
   } catch(e){res.status(500).json({error:e.message});}
 });
+app.delete('/api/admin/dealers/:id', requireAdmin, async (req,res) => {
+  try {
+    const id = req.params.id;
+    if (id === 'DEALER-DEMO') return res.status(400).json({error:'Cannot delete demo dealer'});
+    await dbRun('UPDATE dealers SET active=0 WHERE id=?',[id]);
+    res.json({success:true});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
 app.patch('/api/admin/dealers/:id', requireAdmin, async (req,res) => {
   try {
     const {plan,status,email,prizes,resetPin}=req.body; const id=req.params.id;
