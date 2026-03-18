@@ -197,6 +197,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
     <a href="#how-it-works">How It Works</a>
     <a href="#pricing">Pricing</a>
     <a href="#signup">Get Started</a>
+    <a href="/admin.html" style="font-size:11px;color:#aaa;border:1px solid rgba(0,0,0,.15);border-radius:4px;padding:5px 10px;">Admin ⚙️</a>
   </div>
   <a href="#signup" class="nav-cta">Get Started</a>
 </nav>
@@ -358,7 +359,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
         </div>
         <div class="fg">
           <label>Notification Email *</label>
-          <input type="email" id="sEmail" placeholder="sales@yourdealership.com"/>
+          <input type="email" id="sEmail" placeholder="sales@yourdealership.com" autocomplete="off" value=""/>
         </div>
         <div class="fg">
           <label>Phone</label>
@@ -538,8 +539,10 @@ function updateOdds() {
     const el = document.getElementById(`wpct${i}`);
     if (el) el.textContent = Math.round(p.weight/total*100)+'%';
   });
-  document.getElementById('totalOdds').textContent =
-    `Total weight: ${total} — ${prizes.map((p,i)=>`$${p.amount}: ${Math.round(p.weight/total*100)}%`).join(' · ')}`;
+  const pctSum = prizes.reduce((s,p)=>s+Math.round(p.weight/total*100),0);
+  const oddsEl = document.getElementById('totalOdds');
+  oddsEl.textContent = `${prizes.map((p,i)=>`$${p.amount}: ${Math.round(p.weight/total*100)}%`).join(' · ')} = 100% total`;
+  oddsEl.style.color = '#4ADE80';
 }
 
 function updatePrizeLabel(i) {
