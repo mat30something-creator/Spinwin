@@ -129,6 +129,7 @@ db.serialize(() => {
   // Add branding columns if they don't exist
   db.run(`ALTER TABLE dealers ADD COLUMN brand_color TEXT DEFAULT '#D0021B'`, [], () => {});
   db.run(`ALTER TABLE dealers ADD COLUMN brand_logo TEXT DEFAULT ''`, [], () => {});
+  db.run(`ALTER TABLE dealers ADD COLUMN sms_phone TEXT DEFAULT ''`, [], () => {});
 
   // Seed demo dealer
   db.get('SELECT id FROM dealers WHERE id=?', ['DEALER-DEMO'], (err, row) => {
@@ -530,6 +531,7 @@ app.patch('/api/dashboard/:d/config', requireDealer, async (req,res) => {
     if(email) await dbRun('UPDATE dealers SET email=? WHERE id=?',[email,req.params.d]);
     if(brand_color) await dbRun('UPDATE dealers SET brand_color=? WHERE id=?',[brand_color,req.params.d]);
     if(brand_logo!==undefined) await dbRun('UPDATE dealers SET brand_logo=? WHERE id=?',[brand_logo,req.params.d]);
+    if(req.body.sms_phone!==undefined) await dbRun('UPDATE dealers SET sms_phone=? WHERE id=?',[req.body.sms_phone||'',req.params.d]);
     res.json({success:true});
   } catch(e){res.status(500).json({error:e.message});}
 });

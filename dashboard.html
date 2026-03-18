@@ -429,43 +429,29 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
       <button class="btn" onclick="saveConfig()">Save Settings</button>
     </div>
 
-    <!-- PRO: Branding -->
-    <div class="set-card" id="brandingCard">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div class="set-ttl">Custom Branding <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
+    <!-- Additional Notification Emails - moved here from branding -->
+    <div class="set-card">
+      <div class="set-ttl">Additional Notification Emails</div>
+      <div class="set-sub">Get lead alerts sent to multiple people. Separate emails with commas.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" id="notifyEmailsInput" placeholder="manager@dealer.com, salesman@dealer.com"
+          style="flex:1;min-width:200px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
+        <button class="btn" onclick="saveNotifyEmails()">Save</button>
       </div>
-      <div class="set-sub">Customize the spin page with your dealership's brand colors and logo. Pro plan only.</div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px">Brand Color</div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <input type="color" id="brandColorInput" value="#D0021B" style="width:48px;height:36px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;padding:2px;"/>
-            <span style="font-size:12px;color:var(--muted);">Used for buttons and accents on your spin page</span>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px">Logo URL</div>
-          <input type="url" id="brandLogoInput" placeholder="https://yourdealership.com/logo.png" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Upload your logo to a hosting service (like Imgur) and paste the URL here</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px">Additional Notification Emails</div>
-          <input type="text" id="notifyEmailsInput" placeholder="manager@dealer.com, salesman@dealer.com" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;">Separate multiple emails with commas</div>
-        </div>
-      </div>
-      <button class="btn btn-gold" style="margin-top:14px" onclick="saveBranding()">Save Branding</button>
     </div>
+
+
 
     <!-- PRO: SMS Alerts -->
     <div class="set-card" id="smsCard">
       <div class="set-ttl">SMS Alerts <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
-      <div class="set-sub">Get a text message the moment a new lead scans. Requires Twilio integration.</div>
+      <div class="set-sub">Get a text message the moment a new lead scans. Enter the phone number to receive alerts.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <input type="tel" id="smsPhone" placeholder="+1 (555) 000-0000" style="flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:12px;outline:none;"/>
-        <button class="btn" onclick="toast('SMS alerts coming soon — contact support to enable','err')">Save</button>
+        <input type="tel" id="smsPhone" placeholder="+1 (555) 000-0000"
+          style="flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
+        <button class="btn" onclick="saveSmsPhone()">Save</button>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:8px;">Contact support to enable SMS alerts for your account.</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;">SMS integration via Twilio — contact support to activate after saving your number.</div>
     </div>
 
     <!-- Change PIN -->
@@ -690,16 +676,7 @@ async function loadBranding() {
     const isPro = (data.plan === 'pro');
     applyPlanGating(isPro);
 
-    // Apply brand color if Pro
-    if (isPro && data.brand_color) {
-      document.documentElement.style.setProperty('--red', data.brand_color);
-    }
-    if (data.brand_color && document.getElementById('brandColorInput')) {
-      document.getElementById('brandColorInput').value = data.brand_color;
-    }
-    if (data.brand_logo && document.getElementById('brandLogoInput')) {
-      document.getElementById('brandLogoInput').value = data.brand_logo;
-    }
+    // Branding removed
   } catch(e) {
     window._dealerPlan = 'basic';
     applyPlanGating(false);
@@ -729,26 +706,15 @@ function applyPlanGating(isPro) {
     }
   }
 
-  // Hide branding & SMS cards for basic
-  const brandingCard = document.getElementById('brandingCard');
-  const smsCard      = document.getElementById('smsCard');
-  if (!isPro) {
-    if (brandingCard) {
-      brandingCard.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div class="set-ttl">Custom Branding <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
-            <div class="set-sub" style="margin-top:4px">Custom colors, logo, and multiple notification emails. Available on Pro plan.</div>
-          </div>
-          <button class="btn btn-gold" onclick="upgradeToPro()">Upgrade →</button>
-        </div>`;
-    }
-    if (smsCard) {
+  // Gate SMS for Basic plan
+  const smsCard = document.getElementById('smsCard');
+  if (smsCard) {
+    if (!isPro) {
       smsCard.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div class="set-ttl">SMS Alerts <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
-            <div class="set-sub" style="margin-top:4px">Get a text the moment a new lead scans. Available on Pro plan.</div>
+            <div class="set-ttl" style="margin-bottom:4px">SMS Alerts <span style="background:rgba(245,197,24,.15);color:#F5C518;font-size:9px;padding:2px 7px;border-radius:3px;margin-left:6px;font-weight:700;">PRO</span></div>
+            <div class="set-sub">Get a text the moment a new lead scans. Available on Pro plan.</div>
           </div>
           <button class="btn btn-gold" onclick="upgradeToPro()">Upgrade →</button>
         </div>`;
@@ -1378,18 +1344,36 @@ async function changePin() {
 }
 
 // ─── Branding ─────────────────────────────────────────────────────────────────
-async function saveBranding() {
-  const color = document.getElementById('brandColorInput')?.value||'#D0021B';
-  const logo  = document.getElementById('brandLogoInput')?.value||'';
+async function saveSmsPhone() {
+  const phone = document.getElementById('smsPhone')?.value.trim();
+  if (!phone) return toast('Please enter a phone number','err');
+  try {
+    await apiFetch(`/api/dashboard/${DEALER_ID}/config`, {
+      method:'PATCH', body:JSON.stringify({
+        sms_phone: phone,
+        w100:50,w200:30,w500:15,w1000:5,
+        amt1:100,amt2:200,amt3:500,amt4:1000,
+        cooldown_days:30,offer_hours:72
+      })
+    });
+    toast('SMS number saved! Contact support to activate.');
+  } catch(e) { toast('Number saved!'); }
+}
+
+async function saveNotifyEmails() {
   const emails = document.getElementById('notifyEmailsInput')?.value||'';
   try {
     await apiFetch(`/api/dashboard/${DEALER_ID}/config`,{method:'PATCH',body:JSON.stringify({
-      brand_color:color, brand_logo:logo, notify_emails:emails,
+      notify_emails:emails,
       w100:50,w200:30,w500:15,w1000:5,amt1:100,amt2:200,amt3:500,amt4:1000,
       cooldown_days:30,offer_hours:72
     })});
-    toast('Settings saved!');
+    toast('Notification emails saved!');
   } catch(e) { toast('Saved!'); }
+}
+
+async function saveBranding() {
+  await saveNotifyEmails();
 }
 
 function upgradeToPro() {
