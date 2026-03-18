@@ -572,6 +572,7 @@ function switchTab(name) {
   currentTab = name;
   if (name === 'analytics') renderAnalytics();
   if (name === 'qrcodes') loadQRCodes();
+  if (name === 'settings') loadSettings();
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -1020,6 +1021,37 @@ function renderWeekChart() {
 }
 
 // ─── QR Codes ─────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const data = await apiFetch(`/api/dashboard/${DEALER_ID}/branding`);
+    // branding endpoint returns plan info
+  } catch(e) {}
+  // Load prize config from QR config endpoint
+  try {
+    const res = await fetch(`/api/qr/QR-LOT-001/config?dealer=${DEALER_ID}`);
+    // Try getting config via stats which includes prize info
+    const stats = await apiFetch(`/api/dashboard/${DEALER_ID}/stats`);
+    // Load actual prize config
+    const qrCodes = await apiFetch(`/api/dashboard/${DEALER_ID}/qrcodes`);
+    if (qrCodes && qrCodes.length > 0) {
+      // Get config for first QR code
+      const cfgRes = await fetch(`/api/qr/${qrCodes[0].id}/config`);
+      if (cfgRes.ok) {
+        const cfg = await cfgRes.json();
+        const p = cfg.prizes;
+        if (document.getElementById('amt1')) document.getElementById('amt1').value = p.amt1 || 100;
+        if (document.getElementById('amt2')) document.getElementById('amt2').value = p.amt2 || 200;
+        if (document.getElementById('amt3')) document.getElementById('amt3').value = p.amt3 || 500;
+        if (document.getElementById('amt4')) document.getElementById('amt4').value = p.amt4 || 1000;
+        if (document.getElementById('rw100')) { document.getElementById('rw100').value = p.w100 || 50; updateRangeVal('rw100','rv100'); }
+        if (document.getElementById('rw200')) { document.getElementById('rw200').value = p.w200 || 30; updateRangeVal('rw200','rv200'); }
+        if (document.getElementById('rw500')) { document.getElementById('rw500').value = p.w500 || 15; updateRangeVal('rw500','rv500'); }
+        if (document.getElementById('rw1000')) { document.getElementById('rw1000').value = p.w1000 || 5; updateRangeVal('rw1000','rv1000'); }
+      }
+    }
+  } catch(e) { console.log('Settings load error:', e); }
+}
+
 async function loadQRCodes() {
   const grid = document.getElementById('qrGrid');
   try {
@@ -1144,7 +1176,7 @@ async function saveWeights() {
 }
 
 async function saveEmail() {
-  const email = document.getElementById('notifyEmail').value.trim();
+  const email = (document.getElementById('notifyEmailInput')||document.getElementById('notifyEmail'))?.value.trim();
   if (!email) return toast('Please enter an email','err');
   try {
     await apiFetch(`/api/dashboard/${DEALER_ID}/config`,{method:'PATCH',body:JSON.stringify({email})});
