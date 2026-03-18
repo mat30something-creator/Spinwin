@@ -384,6 +384,31 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.06);padding:
         <div style="font-size:10px;color:#555;margin-top:8px;text-align:right" id="totalOdds"></div>
       </div>
 
+      <!-- PIN Setup -->
+      <div style="background:rgba(27,79,191,.06);border:1px solid rgba(27,79,191,.2);border-radius:10px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:600;color:rgba(96,165,250,.9);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔒 Set Your Dashboard PIN</div>
+        <div style="font-size:11px;color:#555;margin-bottom:16px;">Choose a 6-digit PIN you'll use to log into your dealer dashboard. You can change it anytime in Settings.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="fg">
+            <label>Choose PIN *</label>
+            <input type="password" id="sPin" placeholder="6-digit PIN" maxlength="6" inputmode="numeric"
+              style="letter-spacing:6px;font-size:18px;text-align:center;"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'');checkPinMatch()"/>
+            <div id="pinHint" style="font-size:10px;color:#555;margin-top:4px;">Numbers only, 6 digits</div>
+          </div>
+          <div class="fg">
+            <label>Confirm PIN *</label>
+            <input type="password" id="sPinConfirm" placeholder="Confirm PIN" maxlength="6" inputmode="numeric"
+              style="letter-spacing:6px;font-size:18px;text-align:center;"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'');checkPinMatch()"/>
+            <div id="pinMatch" style="font-size:10px;margin-top:4px;display:none;"></div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#444;margin-top:8px;">
+          💡 Can't remember a PIN? You can always reset it from the admin portal.
+        </div>
+      </div>
+
       <div class="submit-area">
         <button class="big-submit" id="signupBtn" onclick="handleSignup()">Create My Account →</button>
         <div class="form-note">Secure payment powered by Stripe. Cancel anytime.</div>
@@ -450,6 +475,32 @@ function renderPrizeRows() {
   updateOdds();
 }
 
+function checkPinMatch() {
+  const pin = document.getElementById('sPin').value;
+  const confirm = document.getElementById('sPinConfirm').value;
+  const matchEl = document.getElementById('pinMatch');
+  const hintEl = document.getElementById('pinHint');
+  if (pin.length > 0 && pin.length < 6) {
+    hintEl.textContent = `${pin.length}/6 digits`;
+    hintEl.style.color = '#666';
+  } else if (pin.length === 6) {
+    hintEl.textContent = '✓ Good length';
+    hintEl.style.color = '#4ADE80';
+  }
+  if (confirm.length > 0) {
+    matchEl.style.display = 'block';
+    if (pin === confirm) {
+      matchEl.textContent = '✓ PINs match';
+      matchEl.style.color = '#4ADE80';
+    } else {
+      matchEl.textContent = '✗ PINs do not match';
+      matchEl.style.color = '#F87171';
+    }
+  } else {
+    matchEl.style.display = 'none';
+  }
+}
+
 function updateOdds() {
   const total = prizes.reduce((s,p)=>s+p.weight,0)||1;
   prizes.forEach((p,i) => {
@@ -502,15 +553,21 @@ async function handleSignup() {
   const phone   = document.getElementById('sPhone').value.trim();
   const city    = document.getElementById('sCity').value.trim();
 
-  if (!name)  return toast('Please enter your dealership name.','err');
+  const pin        = document.getElementById('sPin').value.trim();
+  const pinConfirm = document.getElementById('sPinConfirm').value.trim();
+
+  if (!name)    return toast('Please enter your dealership name.','err');
   if (!contact) return toast('Please enter the sales manager name.','err');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Please enter a valid email.','err');
+  if (!pin || pin.length !== 6) return toast('Please enter a 6-digit PIN.','err');
+  if (pin !== pinConfirm) return toast('PINs do not match. Please try again.','err');
 
   const btn = document.getElementById('signupBtn');
   btn.disabled=true; btn.textContent='Creating Account…';
 
   const payload = {
     name, contact, email, phone, city, plan,
+    customPin: pin,
     prizes: prizes.map(p=>({amount:p.amount, weight:p.weight}))
   };
 

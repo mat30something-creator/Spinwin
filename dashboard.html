@@ -252,29 +252,58 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
 
   <!-- ANALYTICS -->
   <div id="tab-analytics" class="tab-c">
-    <div class="ph"><div><div class="pt">Analytics</div><div class="ps">Prize distribution &amp; activity</div></div></div>
+    <div class="ph"><div><div class="pt">Analytics</div><div class="ps">Performance metrics for your spin campaign</div></div></div>
+
+    <!-- KPI Row -->
+    <div class="stats" style="margin-bottom:16px;" id="analyticsKPIs">
+      <div class="sc"><div class="sl">Conversion Rate</div><div class="sv" id="aConvRate">—</div><div class="sd neu">scans → leads</div></div>
+      <div class="sc"><div class="sl">Avg Prize Given</div><div class="sv" id="aAvgPrize">—</div><div class="sd neu">per customer</div></div>
+      <div class="sc"><div class="sl">Top Prize Won</div><div class="sv" id="aTopPrize">—</div><div class="sd pos">biggest winner</div></div>
+      <div class="sc"><div class="sl">Contact Rate</div><div class="sv" id="aContactRate">—</div><div class="sd neu">leads contacted</div></div>
+    </div>
+
     <div class="cg">
       <div class="cc">
         <div class="ct">Prize Distribution (Actual)</div>
-        <div class="br" id="prizeDistChart">
-          <div class="brw"><div class="brl" style="color:#4ADE80">$100 Off</div><div class="brt"><div class="brf" style="width:50%;background:#4ADE80"></div></div><div class="brv">50%</div></div>
-          <div class="brw"><div class="brl" style="color:#60A5FA">$200 Off</div><div class="brt"><div class="brf" style="width:30%;background:#60A5FA"></div></div><div class="brv">30%</div></div>
-          <div class="brw"><div class="brl" style="color:#F87171">$500 Off</div><div class="brt"><div class="brf" style="width:15%;background:#F87171"></div></div><div class="brv">15%</div></div>
-          <div class="brw"><div class="brl" style="color:#F5C518">$1,000 Off</div><div class="brt"><div class="brf" style="width:5%;background:#F5C518"></div></div><div class="brv">5%</div></div>
-        </div>
+        <div class="br" id="prizeDistChart"></div>
       </div>
       <div class="cc">
-        <div class="ct">Lead Status</div>
+        <div class="ct">Lead Status Breakdown</div>
         <div id="statusChartWrap" style="text-align:center">
           <canvas id="statusChart" width="140" height="140" style="border-radius:50%;"></canvas>
           <div style="font-size:11px;color:var(--muted);margin-top:10px;display:flex;gap:12px;justify-content:center;" id="statusLegend"></div>
         </div>
       </div>
     </div>
-    <div class="cc">
-      <div class="ct">Scans — Last 7 Days</div>
-      <div class="week-chart" id="weekChart"></div>
-      <div style="display:flex;gap:8px;margin-top:6px;" id="weekLabels"></div>
+
+    <div class="cg" style="margin-top:14px;">
+      <div class="cc">
+        <div class="ct">Daily Scans — Last 7 Days</div>
+        <div class="week-chart" id="weekChart"></div>
+        <div style="display:flex;gap:8px;margin-top:6px;" id="weekLabels"></div>
+      </div>
+      <div class="cc">
+        <div class="ct">Leads by QR Code</div>
+        <div class="br" id="qrBreakdownChart">
+          <div style="font-size:12px;color:var(--muted);text-align:center;padding:20px;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cc" style="margin-top:14px;">
+      <div class="ct">Salesman Performance</div>
+      <table style="width:100%;border-collapse:collapse;" id="salesmanPerfTable">
+        <thead><tr>
+          <th style="text-align:left;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border)">Salesman</th>
+          <th style="text-align:center;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border)">Assigned</th>
+          <th style="text-align:center;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border)">Contacted</th>
+          <th style="text-align:center;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border)">Closed</th>
+          <th style="text-align:center;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border)">Close Rate</th>
+        </tr></thead>
+        <tbody id="salesmanPerfBody">
+          <tr><td colspan="5" style="text-align:center;padding:20px;font-size:12px;color:var(--muted)">Add salesmen and assign leads to see performance metrics</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -784,32 +813,74 @@ function exportCSV() {
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
 function renderAnalytics() {
-  if (!allLeads.length) return;
-  // Prize distribution
-  const totals = {'$100':0,'$200':0,'$500':0,'$1,000':0};
-  allLeads.forEach(l => {
-    const k = Object.keys(totals).find(k => l.prize.includes(k));
-    if (k) totals[k]++;
-  });
   const t = allLeads.length || 1;
-  const bars = [
-    {lbl:'$100 Off',  color:'#4ADE80', count:totals['$100']},
-    {lbl:'$200 Off',  color:'#60A5FA', count:totals['$200']},
-    {lbl:'$500 Off',  color:'#F87171', count:totals['$500']},
-    {lbl:'$1,000 Off',color:'#F5C518', count:totals['$1,000']},
-  ];
-  document.getElementById('prizeDistChart').innerHTML = bars.map(b => {
-    const pct = Math.round((b.count/t)*100);
-    return `<div class="brw"><div class="brl" style="color:${b.color}">${b.lbl}</div><div class="brt"><div class="brf" style="width:${pct}%;background:${b.color}"></div></div><div class="brv">${pct}%</div></div>`;
-  }).join('');
 
-  // Status donut
+  // ── KPI Cards ──
+  const contacted = allLeads.filter(l=>l.status==='Contacted'||l.status==='Closed').length;
+  const closed    = allLeads.filter(l=>l.status==='Closed').length;
+  const prizeVals = allLeads.map(l=>parseInt((l.prize||'0').replace(/[^0-9]/g,''))||0);
+  const avgPrize  = prizeVals.length ? Math.round(prizeVals.reduce((a,b)=>a+b,0)/prizeVals.length) : 0;
+  const topPrize  = prizeVals.length ? Math.max(...prizeVals) : 0;
+
+  document.getElementById('aConvRate').textContent   = t > 0 ? '100%' : '—';
+  document.getElementById('aAvgPrize').textContent   = avgPrize ? '$'+avgPrize : '—';
+  document.getElementById('aTopPrize').textContent   = topPrize ? '$'+topPrize.toLocaleString() : '—';
+  document.getElementById('aContactRate').textContent = t > 0 ? Math.round((contacted/t)*100)+'%' : '—';
+
+  // ── Prize distribution ──
+  const prizeGroups = {};
+  allLeads.forEach(l => {
+    const k = l.prize||'Unknown';
+    prizeGroups[k] = (prizeGroups[k]||0) + 1;
+  });
+  const colors = ['#4ADE80','#60A5FA','#F87171','#F5C518','#C084FC','#FB923C'];
+  const sortedPrizes = Object.entries(prizeGroups).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('prizeDistChart').innerHTML = sortedPrizes.map(([prize,count],i) => {
+    const pct = Math.round((count/t)*100);
+    const color = colors[i%colors.length];
+    return `<div class="brw"><div class="brl" style="color:${color}">${esc(prize)}</div><div class="brt"><div class="brf" style="width:${pct}%;background:${color}"></div></div><div class="brv">${pct}%</div></div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--muted);padding:12px">No data yet</div>';
+
+  // ── Status donut ──
   const statuses = {New:0,Contacted:0,Closed:0};
-  allLeads.forEach(l => { if (statuses[l.status]!==undefined) statuses[l.status]++; });
+  allLeads.forEach(l => { if(statuses[l.status]!==undefined) statuses[l.status]++; });
   drawDonut(statuses, t);
 
-  // Weekly chart
+  // ── Weekly chart ──
   renderWeekChart();
+
+  // ── QR Breakdown ──
+  const qrGroups = {};
+  allLeads.forEach(l => { qrGroups[l.qr_id||'Unknown'] = (qrGroups[l.qr_id||'Unknown']||0)+1; });
+  const sortedQR = Object.entries(qrGroups).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('qrBreakdownChart').innerHTML = sortedQR.map(([qr,count],i) => {
+    const pct = Math.round((count/t)*100);
+    return `<div class="brw"><div class="brl" style="color:#60A5FA;font-size:9px">${esc(qr)}</div><div class="brt"><div class="brf" style="width:${pct}%;background:#60A5FA"></div></div><div class="brv">${count}</div></div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--muted);padding:12px">No data yet</div>';
+
+  // ── Salesman Performance ──
+  const allPeople = [
+    {id:'manager', name:'Sales Manager'},
+    ...salesmen
+  ];
+  const perfRows = allPeople.map(p => {
+    const assigned  = allLeads.filter(l=>l.assigned_to===p.id).length;
+    const contacted = allLeads.filter(l=>l.assigned_to===p.id&&(l.status==='Contacted'||l.status==='Closed')).length;
+    const closed    = allLeads.filter(l=>l.assigned_to===p.id&&l.status==='Closed').length;
+    const closeRate = assigned ? Math.round((closed/assigned)*100)+'%' : '—';
+    if (!assigned) return null;
+    return `<tr>
+      <td style="padding:10px 12px;font-size:13px;font-weight:500">${esc(p.name)}</td>
+      <td style="padding:10px 12px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px">${assigned}</td>
+      <td style="padding:10px 12px;text-align:center;color:#F5C518;font-size:13px">${contacted}</td>
+      <td style="padding:10px 12px;text-align:center;color:#22C55E;font-size:13px">${closed}</td>
+      <td style="padding:10px 12px;text-align:center;font-weight:600;font-size:13px">${closeRate}</td>
+    </tr>`;
+  }).filter(Boolean);
+
+  document.getElementById('salesmanPerfBody').innerHTML = perfRows.length
+    ? perfRows.join('')
+    : '<tr><td colspan="5" style="text-align:center;padding:20px;font-size:12px;color:var(--muted)">Assign leads to salesmen to see performance metrics</td></tr>';
 }
 
 function drawDonut(statuses, total) {

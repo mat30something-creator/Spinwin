@@ -482,7 +482,10 @@ app.post('/api/dealers/signup', rateLimit(5, 60000), async (req,res) => {
     const nameSlug = (name||'DEALER').toUpperCase().replace(/[^A-Z0-9]/g,' ').trim().split(/\s+/).slice(0,2).join('-');
     const dealerId = nameSlug + '-' + crypto.randomBytes(2).toString('hex').toUpperCase();
     const firstQrId='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
-    const pin = generatePin();
+    // Use custom PIN from signup form, or auto-generate one
+    const pin = (req.body.customPin && req.body.customPin.length >= 4)
+      ? req.body.customPin
+      : generatePin();
     const pinHash = hashPin(pin);
     await dbRun(`INSERT INTO dealers (id,name,email,phone,plan,contact,city,status,dashboard_pin) VALUES (?,?,?,?,?,?,?,?,?)`,
       [dealerId,name,email,phone||'',plan||'basic',contact||'',city||'','trial',pinHash]);
@@ -627,7 +630,10 @@ app.post('/api/admin/dealers', requireAdmin, async (req,res) => {
     const nameSlug = (name||'DEALER').toUpperCase().replace(/[^A-Z0-9]/g,' ').trim().split(/\s+/).slice(0,2).join('-');
     const dealerId = nameSlug + '-' + crypto.randomBytes(2).toString('hex').toUpperCase();
     const firstQrId='QR-'+crypto.randomBytes(4).toString('hex').toUpperCase();
-    const pin = generatePin();
+    // Use custom PIN from signup form, or auto-generate one
+    const pin = (req.body.customPin && req.body.customPin.length >= 4)
+      ? req.body.customPin
+      : generatePin();
     const pinHash = hashPin(pin);
     await dbRun(`INSERT INTO dealers (id,name,email,phone,plan,contact,city,status,dashboard_pin) VALUES (?,?,?,?,?,?,?,?,?)`,
       [dealerId,name,email,phone||'',plan||'basic',contact||'',city||'','trial',pinHash]);
