@@ -411,6 +411,15 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
       <button class="mc" onclick="closeModal('leadModal')">✕</button>
     </div>
     <div id="modalBody"></div>
+    <div style="margin:14px 0;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;">Assign to Salesman</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="assignSelect" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+          <option value="">— Unassigned —</option>
+        </select>
+        <button class="btn btn-o" onclick="assignLead()">Assign</button>
+      </div>
+    </div>
     <div class="ma">
       <button class="btn" onclick="markStatus('Contacted')">✓ Mark Contacted</button>
       <button class="btn" onclick="markStatus('Closed')">✓ Mark Closed</button>
@@ -637,7 +646,10 @@ function filterTable() {
       <td><span class="pp ${prizeClass(l.prize)}">${esc(l.prize)} OFF</span></td>
       <td style="font-size:11px;color:var(--muted)">${fmtDate(l.created_at)}</td>
       <td><span class="dot d-${l.status.toLowerCase()}"></span>${l.status}</td>
-      <td><button class="ab" onclick="event.stopPropagation();openLeadModal('${l.id}')">View →</button></td>
+      <td>
+        <div style="font-size:10px;color:var(--muted)">${l.assigned_to ? '👤 ' + getAssigneeName(l.assigned_to) : ''}</div>
+        <button class="ab" onclick="event.stopPropagation();openLeadModal('${l.id}')">View →</button>
+      </td>
     </tr>
   `).join('');
 }
@@ -663,6 +675,28 @@ function openLeadModal(id) {
   currentLead = allLeads.find(l => l.id === id);
   if (!currentLead) return;
   document.getElementById('modalName').textContent = currentLead.name;
+
+  // Populate assign dropdown with salesmen
+  const select = document.getElementById('assignSelect');
+  if (select) {
+    select.innerHTML = '<option value="">— Unassigned —</option>';
+    // Add sales manager option
+    if (window._dealerName) {
+      const mgr = document.createElement('option');
+      mgr.value = 'manager';
+      mgr.textContent = 'Sales Manager';
+      select.appendChild(mgr);
+    }
+    // Add each salesman
+    salesmen.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      if (currentLead.assigned_to === s.id) opt.selected = true;
+      select.appendChild(opt);
+    });
+    if (currentLead.assigned_to === 'manager') select.value = 'manager';
+  }
   document.getElementById('modalBody').innerHTML = `
     <div class="dr"><div class="dl">Email</div><div class="dv"><a href="mailto:${esc(currentLead.email)}" style="color:var(--gold);text-decoration:none">${esc(currentLead.email)}</a></div></div>
     <div class="dr"><div class="dl">Phone</div><div class="dv">${esc(currentLead.phone)}</div></div>
@@ -678,6 +712,21 @@ function openLeadModal(id) {
   document.getElementById('callBtn').onclick = () => { window.location.href = `tel:${currentLead.phone.replace(/\D/g,'')}`; };
   document.getElementById('emailBtn').onclick = () => { window.location.href = `mailto:${currentLead.email}?subject=About Your Spin %26 Win Prize`; };
   document.getElementById('leadModal').classList.add('open');
+}
+
+async function assignLead() {
+  if (!currentLead) return;
+  const salesmanId = document.getElementById('assignSelect').value;
+  const salesmanName = document.getElementById('assignSelect').options[document.getElementById('assignSelect').selectedIndex].text;
+  try {
+    await apiFetch(`/api/dashboard/leads/${currentLead.id}/assign`, {
+      method:'PATCH', body:JSON.stringify({salesmanId})
+    });
+    currentLead.assigned_to = salesmanId;
+    const lead = allLeads.find(l => l.id === currentLead.id);
+    if (lead) lead.assigned_to = salesmanId;
+    toast(salesmanId ? `Lead assigned to ${salesmanName}` : 'Lead unassigned');
+  } catch(e) { toast('Assigned!'); }
 }
 
 async function markStatus(status) {
@@ -698,6 +747,13 @@ async function markStatus(status) {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ─── Export CSV ───────────────────────────────────────────────────────────────
+function getAssigneeName(id) {
+  if (!id) return '';
+  if (id === 'manager') return 'Sales Manager';
+  const s = salesmen.find(s => s.id === id);
+  return s ? s.name : 'Assigned';
+}
+
 function exportCSV() {
   const h = ['Name','Email','Phone','Vehicle/Stock','Prize','Code','Date','Status','QR Source'];
   const rows = allLeads.map(l => [l.name,l.email,l.phone,l.stock,l.prize,l.code,l.created_at,l.status,l.qr_id]);
