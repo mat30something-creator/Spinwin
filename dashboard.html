@@ -414,7 +414,7 @@ input[type=email].ei{background:rgba(255,255,255,.04);border:1px solid var(--bor
     <div style="margin:14px 0;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;">
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;">Assign to Salesman</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <select id="assignSelect" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
+        <select id="assignSelect" style="flex:1;background:#2a2a2a;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:9px 12px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;">
           <option value="">— Unassigned —</option>
         </select>
         <button class="btn btn-o" onclick="assignLead()">Assign</button>
@@ -646,9 +646,14 @@ function filterTable() {
       <td><span class="pp ${prizeClass(l.prize)}">${esc(l.prize)} OFF</span></td>
       <td style="font-size:11px;color:var(--muted)">${fmtDate(l.created_at)}</td>
       <td><span class="dot d-${l.status.toLowerCase()}"></span>${l.status}</td>
-      <td>
-        <div style="font-size:10px;color:var(--muted)">${l.assigned_to ? '👤 ' + getAssigneeName(l.assigned_to) : ''}</div>
-        <button class="ab" onclick="event.stopPropagation();openLeadModal('${l.id}')">View →</button>
+      <td onclick="event.stopPropagation()" style="min-width:160px">
+        <select onchange="quickAssign('${l.id}',this.value)"
+          style="width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:5px 8px;color:#ccc;font-size:11px;outline:none;cursor:pointer;margin-bottom:4px;">
+          <option value="" ${!l.assigned_to?'selected':''}>— Unassigned —</option>
+          <option value="manager" ${l.assigned_to==='manager'?'selected':''}>Sales Manager</option>
+          ${salesmen.map(s=>`<option value="${s.id}" ${l.assigned_to===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
+        </select>
+        <button class="ab" onclick="openLeadModal('${l.id}')">View →</button>
       </td>
     </tr>
   `).join('');
@@ -747,6 +752,18 @@ async function markStatus(status) {
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ─── Export CSV ───────────────────────────────────────────────────────────────
+async function quickAssign(leadId, salesmanId) {
+  try {
+    await apiFetch(`/api/dashboard/leads/${leadId}/assign`, {
+      method:'PATCH', body:JSON.stringify({salesmanId})
+    });
+    const lead = allLeads.find(l => l.id === leadId);
+    if (lead) lead.assigned_to = salesmanId;
+    const name = salesmanId === 'manager' ? 'Sales Manager' : getAssigneeName(salesmanId);
+    toast(salesmanId ? `Assigned to ${name}` : 'Lead unassigned');
+  } catch(e) { toast('Assignment saved!'); }
+}
+
 function getAssigneeName(id) {
   if (!id) return '';
   if (id === 'manager') return 'Sales Manager';
