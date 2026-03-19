@@ -321,6 +321,32 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
       </div>
 
       <div class="cc">
+        <div class="ct">Email Automations</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Test automated emails to make sure they're working correctly.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;">
+            <div>
+              <div style="font-size:13px;font-weight:600;margin-bottom:2px;">Lead Follow-Up Reminders</div>
+              <div style="font-size:11px;color:var(--muted)">Sent 24hrs before a prize offer expires. Runs hourly.</div>
+            </div>
+            <button class="btn btn-o" onclick="testFollowUp()">Run Check Now</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;">
+            <div>
+              <div style="font-size:13px;font-weight:600;margin-bottom:2px;">Weekly Dealer Reports</div>
+              <div style="font-size:11px;color:var(--muted)">Sent every Monday at 8am to all active dealers.</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <select id="weeklyReportDealer" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:12px;outline:none;">
+                <option value="">Select dealer...</option>
+              </select>
+              <button class="btn btn-o" onclick="testWeeklyReport()">Send Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc">
         <div class="ct">Platform Name / Branding</div>
         <div style="margin-top:4px;display:flex;flex-direction:column;gap:8px;">
           <input type="text" value="Spin & Win" placeholder="Platform Name" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
@@ -562,6 +588,14 @@ function filterDealers() {
     (!pf || d.plan===pf) &&
     (!sf || d.status===sf)
   );
+  // Populate weekly report dealer dropdown
+  const reportSelect = document.getElementById('weeklyReportDealer');
+  if (reportSelect) {
+    const current = reportSelect.value;
+    reportSelect.innerHTML = '<option value="">Select dealer...</option>' +
+      dealers.filter(d=>d.status==='active').map(d=>`<option value="${d.id}"${d.id===current?' selected':''}>${esc(d.name)}</option>`).join('');
+  }
+
   const tbody = document.getElementById('dealersBody');
   tbody.innerHTML = filtered.map(d=>`
     <tr onclick="openDealerModal('${d.id}')" style="${d.status==='deleted'?'opacity:.45;text-decoration:line-through;':''}">  
@@ -831,6 +865,32 @@ async function resetCooldowns(id, name) {
     closeModal('dealerModal');
     toast(`Cooldowns reset for ${name} — all devices can spin again!`);
   } catch(e) { toast(e.message, 'err'); }
+}
+
+async function testFollowUp() {
+  try {
+    const res = await fetch('/api/admin/test-followup', {
+      method:'POST',
+      headers:{'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken')}
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    toast('Follow-up check completed! Check server logs for details.');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function testWeeklyReport() {
+  const dealerId = document.getElementById('weeklyReportDealer').value;
+  if (!dealerId) return toast('Please select a dealer first','err');
+  try {
+    const res = await fetch(`/api/admin/test-weekly-report/${dealerId}`, {
+      method:'POST',
+      headers:{'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken')}
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    toast(data.message || 'Weekly report sent!');
+  } catch(e) { toast(e.message,'err'); }
 }
 
 async function testSMS(phone) {

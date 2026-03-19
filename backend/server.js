@@ -21,12 +21,15 @@ const TWILIO_FROM  = process.env.TWILIO_PHONE       || '';
 
 async function sendSMS(to, message) {
   if (!TWILIO_SID || !TWILIO_TOKEN || !TWILIO_FROM) {
-    console.log('[SMS SKIPPED — Twilio not configured]', to, message);
+    console.log('[SMS SKIPPED — Twilio not configured]');
     return;
   }
+  // Normalize phone number to E.164 format
+  const digits = to.replace(/\D/g,'');
+  const normalized = digits.length === 10 ? '+1' + digits : (digits.startsWith('1') && digits.length === 11 ? '+' + digits : to);
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`;
-    const body = new URLSearchParams({ To: to, From: TWILIO_FROM, Body: message });
+    const body = new URLSearchParams({ To: normalized, From: TWILIO_FROM, Body: message });
     const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
     const res = await fetch(url, {
       method: 'POST',
@@ -34,8 +37,11 @@ async function sendSMS(to, message) {
       body: body.toString()
     });
     const data = await res.json();
-    if (data.error_code) throw new Error(data.message);
-    console.log('[SMS sent]', to, data.sid);
+    if (!res.ok || data.error_code) {
+      console.error('[SMS Error]', data.message, 'Code:', data.error_code, 'To:', normalized);
+      return;
+    }
+    console.log('[SMS sent]', normalized, data.sid);
   } catch(e) {
     console.error('[SMS Error]', e.message);
   }
@@ -151,6 +157,8 @@ db.serialize(() => {
   )`);
   // Add assigned_to column to leads if it doesn't exist
   db.run(`ALTER TABLE leads ADD COLUMN assigned_to TEXT DEFAULT ''`, [], () => {});
+  // Add follow_up_sent column for automation tracking
+  db.run(`ALTER TABLE leads ADD COLUMN follow_up_sent TEXT DEFAULT NULL`, [], () => {});
   // Add dashboard_pin column to dealers if it doesn't exist  
   db.run(`ALTER TABLE dealers ADD COLUMN dashboard_pin TEXT DEFAULT ''`, [], () => {});
   // Add branding columns if they don't exist
@@ -322,6 +330,194 @@ async function sendCustomerEmail({name, email, prize, code, expiresAt, dealerNam
     </div>`
   });
 }
+
+// ─── Lead Follow-Up Automation ───────────────────────────────────────────────
+async function sendFollowUpEmail({name, email, prize, code, expiresAt, dealerName, dealerId}) {
+  if (!process.env.SMTP_USER) return;
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const expDate = new Date(expiresAt).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const expTime = new Date(expiresAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  await transporter.sendMail({
+    from: `"${dealerName} via Spin & Win" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `⏰ Your ${prize} discount expires soon — ${dealerName}`,
+    html: `<div style="font-family:sans-serif;max-width:520px;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;margin:0 auto;">
+      <h2 style="color:#F5C518;margin-bottom:4px">⏰ Don't let your prize expire!</h2>
+      <p style="color:#888;margin-bottom:24px">Hi ${name}, your exclusive discount at ${dealerName} expires soon.</p>
+
+      <div style="background:#2A1A00;border:1px solid rgba(245,197,24,.3);border-radius:10px;padding:24px;text-align:center;margin-bottom:20px;">
+        <div style="color:#F5C518;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Your Prize — Expiring Soon</div>
+        <div style="font-size:52px;font-weight:900;color:#fff;line-height:1">${prize} OFF</div>
+        <div style="color:#F5C518;font-size:13px;margin-top:12px;font-weight:600;">Expires ${expDate} at ${expTime}</div>
+      </div>
+
+      <div style="background:#1a1a1a;border:1px dashed rgba(245,197,24,.3);border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;">
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Your Redemption Code</div>
+        <div style="font-size:28px;font-weight:900;color:#F5C518;letter-spacing:4px">${code}</div>
+      </div>
+
+      <div style="background:#161616;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:16px;font-size:13px;color:#888;margin-bottom:20px;">
+        <strong style="color:#ccc">How to redeem:</strong><br/>
+        Visit <strong style="color:#fff">${dealerName}</strong> and show this email or your redemption code to any sales representative before your offer expires.
+      </div>
+
+      <p style="font-size:11px;color:#444;text-align:center;">
+        This is a reminder for your Spin &amp; Win prize · ${dealerName}
+      </p>
+    </div>`
+  });
+}
+
+// Run follow-up check every hour
+async function runFollowUpCheck() {
+  try {
+    const now = new Date();
+    // Find leads where offer expires in 20-28 hours (our 24hr reminder window)
+    // and follow_up_sent is not set
+    const leads = await dbAll(`
+      SELECT l.*, d.name as dealer_name, d.id as dealer_id, d.email as dealer_email
+      FROM leads l
+      JOIN dealers d ON d.id = l.dealer_id
+      WHERE l.expires_at IS NOT NULL
+        AND l.follow_up_sent IS NULL
+        AND l.status != 'Closed'
+        AND datetime(l.expires_at) > datetime('now', '+20 hours')
+        AND datetime(l.expires_at) < datetime('now', '+28 hours')
+    `);
+
+    for (const lead of leads) {
+      try {
+        await sendFollowUpEmail({
+          name:       lead.name,
+          email:      lead.email,
+          prize:      lead.prize,
+          code:       lead.code,
+          expiresAt:  lead.expires_at,
+          dealerName: lead.dealer_name,
+          dealerId:   lead.dealer_id
+        });
+        // Mark as sent
+        await dbRun('UPDATE leads SET follow_up_sent=? WHERE id=?', [new Date().toISOString(), lead.id]);
+        console.log(`[Follow-up] Sent to ${lead.email} for prize ${lead.prize}`);
+      } catch(e) {
+        console.error(`[Follow-up Error] ${lead.email}:`, e.message);
+      }
+    }
+    if (leads.length > 0) console.log(`[Follow-up] Processed ${leads.length} reminders`);
+  } catch(e) {
+    console.error('[Follow-up Check Error]', e.message);
+  }
+}
+
+// Start follow-up automation — runs every hour
+setInterval(runFollowUpCheck, 60 * 60 * 1000);
+// Also run once on startup after 2 minutes
+setTimeout(runFollowUpCheck, 2 * 60 * 1000);
+
+// ─── Weekly Dealer Report ────────────────────────────────────────────────────
+async function sendWeeklyReport(dealer) {
+  if (!process.env.SMTP_USER) return;
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+
+  // Get last 7 days of leads
+  const leads = await dbAll(`
+    SELECT * FROM leads
+    WHERE dealer_id=? AND created_at >= datetime('now', '-7 days')
+    ORDER BY created_at DESC
+  `, [dealer.id]);
+
+  if (leads.length === 0) return; // Skip if no leads this week
+
+  const total     = leads.length;
+  const newLeads  = leads.filter(l=>l.status==='New').length;
+  const contacted = leads.filter(l=>l.status==='Contacted').length;
+  const closed    = leads.filter(l=>l.status==='Closed').length;
+  const prizes    = leads.map(l=>parseInt((l.prize||'0').replace(/[^0-9]/g,''))||0);
+  const totalValue = prizes.reduce((a,b)=>a+b,0);
+  const avgPrize   = total ? Math.round(totalValue/total) : 0;
+
+  // Prize breakdown
+  const prizeGroups = {};
+  leads.forEach(l => { prizeGroups[l.prize] = (prizeGroups[l.prize]||0)+1; });
+  const prizeRows = Object.entries(prizeGroups)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([prize,count]) => `<tr>
+      <td style="padding:8px 12px;font-size:13px">${prize}</td>
+      <td style="padding:8px 12px;font-size:13px;text-align:center">${count}</td>
+      <td style="padding:8px 12px;font-size:13px;text-align:center">${Math.round(count/total*100)}%</td>
+    </tr>`).join('');
+
+  await transporter.sendMail({
+    from: `"Spin & Win" <${process.env.SMTP_USER}>`,
+    to: dealer.email,
+    subject: `📊 Your Weekly Spin & Win Report — ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric'})}`,
+    html: `<div style="font-family:sans-serif;max-width:560px;background:#0a0a0a;color:#f0ede6;padding:32px;border-radius:12px;">
+      <h2 style="color:#F5C518;margin-bottom:4px">📊 Weekly Report</h2>
+      <p style="color:#888;margin-bottom:20px">${dealer.name} · Last 7 days</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:#fff">${total}</div>
+          <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Total Leads</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:#4ADE80">${closed}</div>
+          <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Closed Deals</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:#F5C518">${contacted}</div>
+          <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Contacted</div>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;text-align:center;">
+          <div style="font-size:36px;font-weight:900;color:#60A5FA">$${avgPrize}</div>
+          <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Avg Prize</div>
+        </div>
+      </div>
+
+      <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden;margin-bottom:20px;">
+        <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888">Prize Distribution</div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="border-bottom:1px solid rgba(255,255,255,.06)">
+            <th style="padding:8px 12px;font-size:10px;text-align:left;color:#555;text-transform:uppercase">Prize</th>
+            <th style="padding:8px 12px;font-size:10px;text-align:center;color:#555;text-transform:uppercase">Count</th>
+            <th style="padding:8px 12px;font-size:10px;text-align:center;color:#555;text-transform:uppercase">%</th>
+          </tr></thead>
+          <tbody>${prizeRows}</tbody>
+        </table>
+      </div>
+
+      <a href="${baseUrl}/dashboard.html?dealer=${dealer.id}"
+        style="display:block;background:#D0021B;color:#fff;padding:13px 20px;border-radius:6px;text-decoration:none;font-weight:700;text-align:center;margin-bottom:16px;">
+        📋 View All Leads in Dashboard →
+      </a>
+
+      <p style="font-size:11px;color:#444;text-align:center;">
+        Weekly report every Monday · ${dealer.name} · Spin &amp; Win
+      </p>
+    </div>`
+  });
+}
+
+// Run weekly reports every Monday at 8am
+async function runWeeklyReports() {
+  try {
+    const dealers = await dbAll("SELECT * FROM dealers WHERE status='active' AND active=1");
+    for (const dealer of dealers) {
+      await sendWeeklyReport(dealer).catch(e=>console.error('[Weekly Report Error]', dealer.email, e.message));
+    }
+    console.log(`[Weekly Reports] Sent to ${dealers.length} active dealers`);
+  } catch(e) {
+    console.error('[Weekly Reports Error]', e.message);
+  }
+}
+
+// Schedule weekly reports — check every hour, send on Monday between 8-9am
+setInterval(async () => {
+  const now = new Date();
+  if (now.getDay() === 1 && now.getHours() === 8) {
+    await runWeeklyReports();
+  }
+}, 60 * 60 * 1000);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function hashString(str) { return crypto.createHash('sha256').update(str).digest('hex').slice(0,32); }
@@ -709,13 +905,60 @@ app.delete('/api/admin/cooldowns/:dealerId', requireAdmin, async (req,res) => {
   } catch(e){res.status(500).json({error:e.message});}
 });
 
-// Test SMS endpoint (admin only)
+// Test SMS endpoint (admin only) - returns detailed error info
 app.post('/api/admin/test-sms', requireAdmin, async (req,res) => {
+  const {phone, message} = req.body;
+  if (!phone) return res.status(400).json({error:'Phone number required'});
+
+  // Check config
+  if (!TWILIO_SID)   return res.status(500).json({error:'TWILIO_ACCOUNT_SID not set in environment'});
+  if (!TWILIO_TOKEN) return res.status(500).json({error:'TWILIO_AUTH_TOKEN not set in environment'});
+  if (!TWILIO_FROM)  return res.status(500).json({error:'TWILIO_PHONE not set in environment'});
+
   try {
-    const {phone, message} = req.body;
-    if (!phone) return res.status(400).json({error:'Phone number required'});
-    await sendSMS(phone, message || '⚡ Test SMS from Spin & Win! Your SMS alerts are working correctly.');
-    res.json({success:true, message:'SMS sent!'});
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`;
+    const body = new URLSearchParams({
+      To:   phone.replace(/\D/g,'').length === 10 ? '+1' + phone.replace(/\D/g,'') : phone,
+      From: TWILIO_FROM,
+      Body: message || '⚡ Test SMS from Spin & Win!'
+    });
+    const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    const data = await response.json();
+    if (!response.ok || data.error_code) {
+      return res.status(500).json({
+        error: data.message || 'Twilio error',
+        code: data.error_code,
+        details: data,
+        from: TWILIO_FROM,
+        to: phone
+      });
+    }
+    res.json({success:true, sid:data.sid, status:data.status, from:TWILIO_FROM, to:phone});
+  } catch(e){
+    res.status(500).json({error:e.message, from:TWILIO_FROM, to:phone});
+  }
+});
+
+// Test weekly report for a specific dealer
+app.post('/api/admin/test-weekly-report/:dealerId', requireAdmin, async (req,res) => {
+  try {
+    const dealer = await dbGet('SELECT * FROM dealers WHERE id=?', [req.params.dealerId]);
+    if (!dealer) return res.status(404).json({error:'Dealer not found'});
+    await sendWeeklyReport(dealer);
+    res.json({success:true, message:`Weekly report sent to ${dealer.email}`});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
+// Test follow-up check manually
+app.post('/api/admin/test-followup', requireAdmin, async (req,res) => {
+  try {
+    await runFollowUpCheck();
+    res.json({success:true, message:'Follow-up check completed — check server logs'});
   } catch(e){res.status(500).json({error:e.message});}
 });
 
