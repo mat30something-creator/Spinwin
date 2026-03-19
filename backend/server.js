@@ -14,6 +14,33 @@ const path       = require('path');
 const crypto     = require('crypto');
 const stripe     = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
 
+// Twilio SMS
+const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID || '';
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN  || '';
+const TWILIO_FROM  = process.env.TWILIO_PHONE       || '';
+
+async function sendSMS(to, message) {
+  if (!TWILIO_SID || !TWILIO_TOKEN || !TWILIO_FROM) {
+    console.log('[SMS SKIPPED — Twilio not configured]', to, message);
+    return;
+  }
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`;
+    const body = new URLSearchParams({ To: to, From: TWILIO_FROM, Body: message });
+    const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    const data = await res.json();
+    if (data.error_code) throw new Error(data.message);
+    console.log('[SMS sent]', to, data.sid);
+  } catch(e) {
+    console.error('[SMS Error]', e.message);
+  }
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
@@ -467,6 +494,12 @@ app.post('/api/leads', rateLimit(30, 60000), async (req,res) => {
     await dbRun('UPDATE qr_codes SET scans=scans+1 WHERE id=?',[qrId]);
     sendLeadEmail(dealer,{name,email,phone,stock,prize,code,qr_id:qrId,expires_at:expiresAt},config).catch(e=>console.error('[Email]',e.message));
     sendCustomerEmail({name,email,prize,code,expiresAt,dealerName:dealer.name,stock}).catch(e=>console.error('[Customer Email]',e.message));
+
+    // SMS alert for Pro dealers
+    if (dealer.plan === 'pro' && dealer.sms_phone) {
+      const smsMsg = `🎯 New Lead! ${name} - ${phone} won ${prize} OFF${stock?' on '+stock:''}. Code: ${code}`;
+      sendSMS(dealer.sms_phone, smsMsg).catch(e=>console.error('[SMS]',e.message));
+    }
     res.json({success:true,prize,code,expiresAt});
   } catch(e){res.status(500).json({error:e.message});}
 });
