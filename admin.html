@@ -311,6 +311,16 @@ hr.mdiv{border:none;border-top:1px solid var(--border);margin:16px 0;}
         <div style="font-size:10px;color:var(--muted);margin-top:6px">Receive alerts when new dealers sign up</div>
       </div>
       <div class="cc">
+        <div class="ct">Test SMS Alert</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Send a test SMS to verify Twilio is configured correctly.</div>
+        <div style="display:flex;gap:8px;">
+          <input type="tel" id="testSmsPhone" placeholder="+1 (555) 000-0000"
+            style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
+          <button class="btn btn-gold" onclick="testSMS(document.getElementById('testSmsPhone').value)">Send Test</button>
+        </div>
+      </div>
+
+      <div class="cc">
         <div class="ct">Platform Name / Branding</div>
         <div style="margin-top:4px;display:flex;flex-direction:column;gap:8px;">
           <input type="text" value="Spin & Win" placeholder="Platform Name" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;"/>
@@ -621,6 +631,7 @@ function openDealerModal(id) {
     <button class="btn btn-gold" onclick="saveDealerChanges('${id}')">Save Changes</button>
     <button class="btn btn-green" onclick="impersonate('${id}','${esc(d.name)}');closeModal('dealerModal')">View Dashboard →</button>
     <button class="btn btn-o" onclick="resetDealerPin('${id}','${esc(d.name)}')">🔑 Reset PIN</button>
+    <button class="btn btn-o" onclick="resetCooldowns('${id}','${esc(d.name)}')">⏱ Reset Cooldowns</button>
     <button class="btn btn-o" onclick="closeModal('dealerModal')">Cancel</button>
     <button class="btn ab red" style="margin-left:auto" onclick="suspendDealer('${id}')">Suspend</button>
     <button class="btn" style="background:rgba(208,2,27,.15);color:#F87171;border:1px solid rgba(208,2,27,.3)" onclick="deleteDealer('${id}','${esc(d.name)}')">🗑 Delete</button>
@@ -805,6 +816,33 @@ This will delete all their leads, QR codes, and account data. This cannot be und
     closeModal('dealerModal');
     await loadDealersFromAPI();
     toast(`${name} marked as Deleted.`);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function resetCooldowns(id, name) {
+  if (!confirm(`Reset all spin cooldowns for ${name}?\n\nThis allows all devices to spin again immediately — useful for testing.`)) return;
+  try {
+    const res = await fetch(`/api/admin/cooldowns/${id}`, {
+      method: 'DELETE',
+      headers: {'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken')}
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    closeModal('dealerModal');
+    toast(`Cooldowns reset for ${name} — all devices can spin again!`);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function testSMS(phone) {
+  try {
+    const res = await fetch('/api/admin/test-sms', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'x-admin-token': window._adminToken || sessionStorage.getItem('adminToken')},
+      body: JSON.stringify({phone, message:'⚡ Test SMS from Spin & Win! Your SMS alerts are working. 🎯'})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    toast('Test SMS sent! Check your phone 📱');
   } catch(e) { toast(e.message, 'err'); }
 }
 

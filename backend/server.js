@@ -701,6 +701,24 @@ app.get('/api/admin/leads', requireAdmin, async (req,res) => {
   } catch(e){res.status(500).json({error:e.message});}
 });
 
+// Reset cooldown for a specific device/dealer (admin only)
+app.delete('/api/admin/cooldowns/:dealerId', requireAdmin, async (req,res) => {
+  try {
+    await dbRun('DELETE FROM spin_locks WHERE dealer_id=?', [req.params.dealerId]);
+    res.json({success:true, message:'All cooldowns cleared for this dealer'});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
+// Test SMS endpoint (admin only)
+app.post('/api/admin/test-sms', requireAdmin, async (req,res) => {
+  try {
+    const {phone, message} = req.body;
+    if (!phone) return res.status(400).json({error:'Phone number required'});
+    await sendSMS(phone, message || '⚡ Test SMS from Spin & Win! Your SMS alerts are working correctly.');
+    res.json({success:true, message:'SMS sent!'});
+  } catch(e){res.status(500).json({error:e.message});}
+});
+
 app.get('/api/admin/stats', requireAdmin, async (req,res) => {
   try {
     const [total,active,trial,leads,todayLeads,plans] = await Promise.all([
